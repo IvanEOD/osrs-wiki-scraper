@@ -1,4 +1,6 @@
-package org.tribot.wikiscraper.utility
+package org.tribot.wikiscraper.classes
+
+import org.tribot.wikiscraper.utility.toDate
 
 
 /* Written by IvanEOD 12/9/2022, at 8:44 AM */

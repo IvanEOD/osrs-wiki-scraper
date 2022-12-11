@@ -1,4 +1,4 @@
-package org.tribot.wikiscraper.utility
+package org.tribot.wikiscraper.classes
 
 /* Written by IvanEOD 12/9/2022, at 8:44 AM */
 data class ItemBuyLimits(
@@ -6,6 +6,9 @@ data class ItemBuyLimits(
     val lastWikiUpdateString: String,
     val items: Map<String, Int>
 ) {
+
+    operator fun get(itemName: String): Int? = items[itemName]
+
 
     override fun toString(): String = "ItemBuyLimits(" +
             "lastWikiUpdate=$lastWikiUpdate, " +

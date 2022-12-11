@@ -3,6 +3,7 @@ package org.tribot.wikiscraper.classes
 import org.tribot.wikiscraper.utility.DefaultDate
 import org.tribot.wikiscraper.utility.getDateNonNullable
 import org.tribot.wikiscraper.utility.getDateNullable
+import org.tribot.wikiscraper.utility.toWikiAlternateFormat
 import java.util.*
 
 
@@ -29,10 +30,12 @@ data class ItemDetails(
     val value: Int,
     val weight: Double,
     val canSellOnExchange: Boolean,
+    val buyLimit: Int,
     val release: Date,
     val update: String,
     val removal: Date?,
     val removalUpdate: String?,
+    val lastUpdate: Date,
     val equipmentItemInfo: EquipmentItemInfo?,
     val isHistoricId: Boolean,
     val isBetaId: Boolean,
@@ -40,8 +43,44 @@ data class ItemDetails(
 
     val highAlchValue: Int get() = if (alchable) (value * 0.6).toInt() else 0
     val lowAlchValue: Int get() = if (alchable) (value * 0.4).toInt() else 0
-
     val isEquipmentItem: Boolean get() = equipmentItemInfo != null && equippable
+
+    fun debug(prefix: String) {
+        fun prefixPrint(string: String) = println("$prefix$string")
+        prefixPrint("Item: $name${if (version.isNotEmpty()) " ($version)" else ""} [$id]")
+        prefixPrint("    Image: $image")
+        if (aka.isNotEmpty()) prefixPrint("    AKA: $aka")
+        prefixPrint("    Members: $members")
+        prefixPrint("    Alchable: $alchable")
+        prefixPrint("    Equippable: $equippable")
+        prefixPrint("    Tradeable: $tradeable")
+        prefixPrint("    Stackable: $stackable")
+        prefixPrint("    Stacks in bank: $stacksInBank")
+        prefixPrint("    Placeholder: $placeholder")
+        prefixPrint("    Quest: $quest")
+        prefixPrint("    Destroy: $destroy")
+        prefixPrint("    Options: $options")
+        if (wornOptions.isNotEmpty()) prefixPrint("    Worn options: $wornOptions")
+        prefixPrint("    Edible: $edible")
+        prefixPrint("    Examine: $examine")
+        prefixPrint("    Value: $value")
+        if (alchable) prefixPrint("    High alch value: $highAlchValue")
+        if (alchable) prefixPrint("    Low alch value: $lowAlchValue")
+        prefixPrint("    Weight: $weight")
+        prefixPrint("    Can sell on exchange: $canSellOnExchange")
+        prefixPrint("    Buy limit: $buyLimit")
+        prefixPrint("    Release: ${release.toWikiAlternateFormat()}")
+        prefixPrint("    Update: $update")
+        if (removal != null) prefixPrint("    Removal: ${removal.toWikiAlternateFormat()}")
+        if (removal != null) prefixPrint("    Removal update: $removalUpdate")
+        prefixPrint("    Last update: ${lastUpdate.toWikiAlternateFormat()}")
+        if (isHistoricId) prefixPrint("    isHistoricId: true")
+        if (isBetaId) prefixPrint("    isBetaId: true")
+        equipmentItemInfo?.debug("$prefix    ")
+    }
+
+
+
 
 
     companion object {
@@ -82,18 +121,20 @@ data class ItemDetails(
             val value = map["value"]?.toIntOrNull() ?: 0
             val weight = map["weight"]?.toDoubleOrNull() ?: 0.0
             val canSellOnExchange = map["exchange"]?.boolean() ?: tradeable
-            val release = map["release"]?.getDateNonNullable(DefaultDate) ?: DefaultDate
+            val buyLimit = map["buylimit"]?.toIntOrNull() ?: 0
+            val release = map["release"]?.getDateNonNullable() ?: DefaultDate
             val update = map["update"] ?: ""
             val removal = map["removal"]?.getDateNullable()
             val removalUpdate = map["removalupdate"] ?: ""
+            val lastUpdate = map["lastupdate"]?.getDateNonNullable() ?: DefaultDate
 
             return ItemDetails(
                 id, name, version, image,
                 aka, members, alchable, equippable, tradeable,
                 stackable, stacksInBank, placeholder, quest,
                 destroy, options, wornOptions, edible,
-                examine, value, weight, canSellOnExchange,
-                release, update, removal, removalUpdate,
+                examine, value, weight, canSellOnExchange, buyLimit,
+                release, update, removal, removalUpdate, lastUpdate,
                 equipment, isHistoric, isBeta
             )
 

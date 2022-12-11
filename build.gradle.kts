@@ -12,7 +12,6 @@ repositories {
     mavenCentral()
 }
 
-
 java {
     withSourcesJar()
 }
@@ -28,8 +27,9 @@ dependencies {
     implementation("org.apache.commons:commons-lang3:3.12.0")
 }
 
-tasks.withType<KotlinCompile> {
+tasks.withType<KotlinCompile>().all {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs += "-Xcontext-receivers"
 }
 
 tasks.jar {

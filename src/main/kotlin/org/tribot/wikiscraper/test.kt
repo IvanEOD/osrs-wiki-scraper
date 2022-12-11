@@ -9,7 +9,13 @@ fun main() {
 
     val wiki = OsrsWiki.builder().build()
 
-    val itemTemplates = wiki.getItemTemplates()
 
+
+//    val itemTemplates = wiki.getItemTemplates()
+//
+//    itemTemplates.forEach { (title, template) ->
+//        if (template.id == -1) println("Couldn't find id for $title")
+////        template.debug("")
+//    }
 
 }

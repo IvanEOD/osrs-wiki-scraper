@@ -4,6 +4,8 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import org.tribot.wikiscraper.classes.ItemBuyLimits
+import org.tribot.wikiscraper.lua.ScribuntoSession
 import org.tribot.wikiscraper.query.WikiQuery
 import org.tribot.wikiscraper.utility.*
 import org.tribot.wikiscraper.utility.GSON
@@ -25,14 +27,18 @@ class OsrsWiki private constructor() {
         private set
 
     internal fun newQuery(vararg templates: WikiQuery.Template): WikiQuery = WikiQuery(this, *templates)
+
+    fun scribuntu(init: ScribuntoSession.Builder.() -> Unit) = ScribuntoSession.build(this, init)
+
     
     private fun refreshNamespaceManager() {
         namespaceManager = Namespace.Manager(newQuery(WikiQuery.Namespaces).next()!!
             .input.getAsJsonObject("query"))
     }
 
-    fun basicGet(action: String, vararg parameters: String): Response? {
-        val properties = propertyMap(*parameters)
+    fun basicGet(action: String, vararg parameters: String): Response? = basicGet(action, propertyMap(*parameters))
+    fun basicGet(action: String, parameters: Map<String, String>): Response? {
+        val properties = parameters.toMutableMap()
         properties["action"] = action
         properties["format"] = "json"
         return try {
@@ -72,34 +78,19 @@ class OsrsWiki private constructor() {
         if (response.isEmpty()) throw Exception("Failed to fetch buy limits")
         val result = mutableMapOf<String, Int>()
         val lines = response.split("\n")
-        var lastUpdateLong: Long = 0L
-        var lastUpdateDateString: String = ""
+        var lastUpdateLong = 0L
+        var lastUpdateDateString = ""
         for (line in lines) {
             val matches = BuyLimitsRegex.getAllMatchGroups(line)
-            println("Matches Size: ${matches.size}")
             if (matches.size >= 2) {
-                val key = matches[1]
-                val value = matches[2]
+                val key = matches[0]
+                val value = matches[1]
                 if (key == "%LAST_UPDATE%") lastUpdateLong = value.toLong()
                 if (key == "%LAST_UPDATE_F%") lastUpdateDateString = value
                 else result[key] = value.toIntOrNull() ?: -1
             }
         }
         return ItemBuyLimits(lastUpdateLong, lastUpdateDateString, result)
-    }
-    internal fun ItemBuyLimits.Companion.fetchLastUpdate(): Long {
-        val response = client.newCall(BuyLimitsUrl).body?.string() ?: ""
-        if (response.isEmpty()) throw Exception("Failed to fetch buy limits")
-        val lines = response.split("\n")
-        for (line in lines) {
-            val matches = BuyLimitsRegex.getAllMatchGroups(line)
-            if (matches.isNotEmpty()) {
-                val key = matches[0]
-                val value = matches[1]
-                if (key == "%LAST_UPDATE%") return value.toLong()
-            }
-        }
-        return 0
     }
 
     inner class Builder internal constructor() {
@@ -166,21 +157,8 @@ class OsrsWiki private constructor() {
     class Namespace(val value: Int) {
         companion object {
             val Main: Namespace = Namespace(0)
-            val Talk: Namespace = Namespace(1)
-            val User: Namespace = Namespace(2)
-            val UserTalk: Namespace = Namespace(3)
             val Project: Namespace = Namespace(4)
-            val ProjectTalk: Namespace = Namespace(5)
-            val File: Namespace = Namespace(6)
-            val FileTalk: Namespace = Namespace(7)
-            val Mediawiki: Namespace = Namespace(8)
-            val MediawikiTalk: Namespace = Namespace(9)
-            val Template: Namespace = Namespace(10)
-            val TemplateTalk: Namespace = Namespace(11)
-            val Help: Namespace = Namespace(12)
-            val HelpTalk: Namespace = Namespace(13)
             val Category: Namespace = Namespace(14)
-            val CategoryTalk: Namespace = Namespace(15)
         }
 
         override fun hashCode(): Int = value

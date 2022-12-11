@@ -27,8 +27,30 @@ internal val WikiDoubleBracketDateRegex = "^\\[\\[(\\d+)\\s(\\w+)]]\\s\\[\\[(\\d
 val WikiDoubleBracketDateFormatter = SimpleDateFormat("[[dd MMMM]] [[yyyy]]")
 val WikiAlternateDateFormatter = SimpleDateFormat("dd MMMM yyyy")
 
+fun Date.toWikiDoubleBracketFormat(): String = WikiDoubleBracketDateFormatter.format(this)
+fun Date.toWikiAlternateFormat(): String = WikiAlternateDateFormatter.format(this)
+
+fun Long.toSecondsString(): String {
+    val seconds = this / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    val years = days / 365
+    return when {
+        years > 0 -> "${years}y ${days % 365}d"
+        days > 0 -> "${days}d ${hours % 24}h"
+        hours > 0 -> "${hours}h ${minutes % 60}m"
+        minutes > 0 -> "${minutes}m ${seconds % 60}s"
+        else -> "${seconds}s"
+    }
+}
+
+val Number.msSeconds: Long get() = this.toLong() * 1000
+val Number.msMinutes: Long get() = this.toLong() * 60 * 1000
+val Number.msHours: Long get() = this.toLong() * 60 * 60 * 1000
+
 fun Long.toDate(format: String): String {
-    val date = java.util.Date(this)
+    val date = Date(this)
     val formatter = SimpleDateFormat(format)
     return formatter.format(date)
 }
@@ -179,18 +201,20 @@ inline fun <reified T : Any> String.getNullable(): T? = when (T::class) {
     else -> null
 }
 
-val DefaultDate = Date.from(Instant.now().minus(3650 * 20, ChronoUnit.DAYS))
+val DefaultDate: Date = Date.from(Instant.now().minus(3650 * 20, ChronoUnit.DAYS))
 
-fun String.getDateNullable(formatter: SimpleDateFormat? = null): Date? =
-    runCatching { formatter?.parse(this) }.getOrElse {
-        runCatching { WikiDoubleBracketDateFormatter.parse(this) }.getOrElse {
-            runCatching { WikiAlternateDateFormatter.parse(this) }.getOrElse {
-                runCatching { Date.from(Instant.parse(this)) }.getOrElse {
-                    runCatching { Date(this.toLong()) }.getOrNull()
-                }
-            }
-        }
-    }
+fun String.getDateNullable(formatter: SimpleDateFormat? = null): Date? {
+    if (this.isBlank()) return null
+    var date: Date? = null
+    if (formatter != null) date = runCatching { formatter.parse(this) }.getOrNull()
+    if (date == null) date = runCatching { WikiDoubleBracketDateFormatter.parse(this) }.getOrNull()
+    if (date == null) date = runCatching { WikiAlternateDateFormatter.parse(this) }.getOrNull()
+    if (date == null) date = runCatching { Date.from(Instant.parse(this)) }.getOrNull()
+    if (date == null) date = runCatching { Date.from(Instant.ofEpochMilli(this.toLong())) }.getOrNull()
+//    println("Parsing date: $this = ${date?.toWikiAlternateFormat() ?: "null"}")
+    return date
+}
+
 
 fun String.getDateNonNullable(defaultValue: Date? = null, formatter: SimpleDateFormat? = null) =
     this.getDateNullable(formatter) ?: defaultValue ?: DefaultDate
@@ -199,7 +223,7 @@ fun String.getDateRangeNullable(): ClosedRange<Date>? {
     if (this.isEmpty()) return null
     val split = this.split(" - ")
     if (split.size != 2) return null
-    val formatter = SimpleDateFormat("dd MMMM yyyy")
+    val formatter = WikiAlternateDateFormatter
     val start = split[0].getDateNullable(formatter = formatter)
     val end = split[1].getDateNullable(formatter = formatter)
     if (start == null || end == null) return null

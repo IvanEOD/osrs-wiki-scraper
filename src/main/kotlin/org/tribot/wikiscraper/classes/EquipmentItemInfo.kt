@@ -8,22 +8,16 @@ data class EquipmentItemInfo(
     val attackStats: GeneralStats = GeneralStats(),
     val defenceStats: GeneralStats = GeneralStats(),
     val otherStats: OtherStats = OtherStats(),
-//    val image: String?,
-//    val caption: String?,
-//    val altImage: String?,
-//    val altCaption: String?,
 ) {
     constructor(
         slot: String, twoHanded: Boolean, combatStyle: String,
         astab: Int, aslash: Int, acrush: Int, amagic: Int, arange: Int,
         dstab: Int, dslash: Int, dcrush: Int, dmagic: Int, drange: Int,
         str: Int, rstr: Int, mstr: Int, prayer: Int, attackRange: Int?, speed: Int?,
-//        image: String, caption: String, altImage: String, altCaption: String
     ): this(slot, twoHanded, combatStyle,
         GeneralStats(astab, aslash, acrush, amagic, arange),
         GeneralStats(dstab, dslash, dcrush, dmagic, drange),
         OtherStats(str, rstr, mstr, prayer, attackRange, speed),
-//        image, caption, altImage, altCaption
     )
 
     data class GeneralStats(
@@ -32,7 +26,18 @@ data class EquipmentItemInfo(
         val crush: Int = 0,
         val magic: Int = 0,
         val range: Int = 0,
-    )
+    ) {
+        fun debug(prefix: String, attack: Boolean) {
+            fun prefixPrint(string: String) = println("$prefix$string")
+            val attackOrDefence = if (attack) "(Attack)" else "(Defence)"
+            prefixPrint("Stab $attackOrDefence: $stab")
+            prefixPrint("Slash $attackOrDefence: $slash")
+            prefixPrint("Crush $attackOrDefence: $crush")
+            prefixPrint("Magic $attackOrDefence: $magic")
+            prefixPrint("Range $attackOrDefence: $range")
+        }
+    }
+
     data class OtherStats(
         val strength: Int = 0,
         val rangedStrength: Int = 0,
@@ -40,7 +45,29 @@ data class EquipmentItemInfo(
         val prayer: Int = 0,
         val attackRange: Int? = null,
         val speed: Int? = null,
-    )
+    ) {
+        fun debug(prefix: String) {
+            fun prefixPrint(string: String) = println("$prefix$string")
+            prefixPrint("Strength: $strength")
+            prefixPrint("Ranged Strength: $rangedStrength")
+            prefixPrint("Magic Damage: $magicDamage")
+            prefixPrint("Prayer: $prayer")
+            prefixPrint("Attack Range: ${attackRange ?: "N/A"}")
+            prefixPrint("Speed: ${speed ?: "N/A"}")
+        }
+    }
+
+    fun debug(prefix: String) {
+        fun prefixPrint(string: String) = println("$prefix$string")
+        prefixPrint("Equipment item info:")
+        prefixPrint("    Slot: $slot")
+        prefixPrint("    Two-handed: $isTwoHanded")
+        if (combatStyle.isNotEmpty()) prefixPrint("    Combat style: $combatStyle")
+        attackStats.debug("$prefix    ", true)
+        defenceStats.debug("$prefix    ", false)
+        otherStats.debug("$prefix    ")
+    }
+
 
     companion object {
         private fun getInt(string: String?): Int? {
@@ -52,7 +79,6 @@ data class EquipmentItemInfo(
                 .replace("+", "")
                 .toIntOrNull()?.let { if (neg) -it else it }
         }
-
 
         fun fromMap(map: Map<String, String>): EquipmentItemInfo {
             var slot = map["slot"] ?: ""

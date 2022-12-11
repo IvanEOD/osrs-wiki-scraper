@@ -19,5 +19,7 @@ val wiki = OsrsWiki.builder()
     wiki.getTitlesInCategory("")
 ```
 
+
+
 </p>
 </details>

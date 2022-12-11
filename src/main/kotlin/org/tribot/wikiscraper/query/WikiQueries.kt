@@ -6,9 +6,13 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kotlinx.coroutines.*
 import org.tribot.wikiscraper.OsrsWiki
+import org.tribot.wikiscraper.classes.ItemBuyLimits
 import org.tribot.wikiscraper.classes.ItemDetails
+import org.tribot.wikiscraper.classes.QuestRequirement
+import org.tribot.wikiscraper.classes.WikiItemPrice
 import org.tribot.wikiscraper.utility.*
 import java.net.URLEncoder
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar
 
 
 /* Written by IvanEOD 12/9/2022, at 8:36 AM */
@@ -85,7 +89,16 @@ fun OsrsWiki.getQuestRequirements(): Map<String, List<QuestRequirement>> {
 
 fun OsrsWiki.getLastRevisionTimestamp(titles: Collection<String>): Map<String, String> =
     getNonContinuous(titles, WikiQuery.LastRevisionTimestamp, emptyMap(), "revisions")
-        .mapValues { (_, value) -> if (value == null || value.isJsonNull) "" else value.asJsonObject["timestamp"].asString }
+        .mapValues { (_, value) ->
+            if (value == null || value.isJsonNull) ""
+            else {
+                if (value.isJsonArray) {
+                    val array = value.asJsonArray
+                    if (array.size() == 0) ""
+                    else array[0].asJsonObject.get("timestamp").asString
+                } else value.asJsonObject.get("timestamp").asString
+            }
+        }
 fun OsrsWiki.getLastRevisionTimestamp(vararg titles: String) = getLastRevisionTimestamp(titles.toList())
 fun OsrsWiki.getPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
     val result = mutableMapOf<Int, String>()
@@ -113,14 +126,12 @@ fun OsrsWiki.getItemPrice(id: Int): WikiItemPrice? {
     val result = GSON.fromJson(response, WikiItemPrice.WikiResponse::class.java)
     return WikiItemPrice(result.data[id]!!)
 }
-fun OsrsWiki.getBuyLimits(): ItemBuyLimits = ItemBuyLimits.fetch()
-fun OsrsWiki.getBuyLimitsLastUpdate(): Long = ItemBuyLimits.fetchLastUpdate()
-
+fun OsrsWiki.getItemBuyLimits(): ItemBuyLimits = ItemBuyLimits.fetch()
 fun OsrsWiki.getUnalchableItemTitles(): List<String> = getTitlesInCategory("Items that cannot be alchemised")
 
 
 @OptIn(DelicateCoroutinesApi::class)
-fun OsrsWiki.getItemTemplates() {
+fun OsrsWiki.getItemTemplates(): Map<String, ItemDetails> {
     val properties = mutableMapOf(
         "namespace" to "",
         "uses" to "Template:Infobox Item",
@@ -160,24 +171,22 @@ fun OsrsWiki.getItemTemplates() {
                                 else -> title to (infoboxItem to null)
                             }
                         } else title to (infoboxItem to null)
-
                     }
                 }
             }.awaitAll().flatten().forEach { (title, pair) -> templates[title] = pair }
 
         }.join()
     }
-
+    println("Got ${templates.size} item details in ${(System.currentTimeMillis() - start).toSecondsString()}.")
+    val buyLimits = getItemBuyLimits()
     val unalchableItems = getUnalchableItemTitles()
     val timestamps = getLastRevisionTimestamp(templates.keys)
-    println(unalchableItems)
 
     val itemDetails: MutableMap<String, ItemDetails> = mutableMapOf()
     templates.forEach { (title, template) ->
 
         val itemTemplate = template.first.toVersionedMap()
         val bonusesTemplate = template.second?.toVersionedMap()
-
         val itemVersions = itemTemplate.getIndividualVersions()
         val bonusesVersions = bonusesTemplate?.getIndividualVersions() ?: emptyList()
 
@@ -185,12 +194,18 @@ fun OsrsWiki.getItemTemplates() {
             val itemData = itemVersions.getOrNull(i)?.toMutableMap() ?: continue
             val bonusesData = bonusesVersions.getOrNull(i) ?: bonusesVersions.firstOrNull() ?: emptyMap()
             itemData["alchable"] = if (title !in unalchableItems) "yes" else "no"
-            itemData["lastUpdate"] = timestamps[title] ?: ""
+            itemData["lastupdate"] = timestamps[title] ?: ""
+            itemData["buylimit"] = buyLimits[title]?.toString() ?: ""
             itemDetails[title] = ItemDetails.fromMap(itemData, bonusesData)
         }
     }
-    println("Found ${templates.keys.size} templates in ${((System.currentTimeMillis() - start) / 1000).toInt()} seconds")
+    println("Built ${templates.keys.size} templates in ${(System.currentTimeMillis() - start).toSecondsString()}.")
+    return itemDetails
 }
+
+//fun OsrsWiki.getItemTemplates(vararg titles: String): Map<String, ItemDetails> {
+//
+//}
 
 
 
@@ -262,10 +277,8 @@ private fun OsrsWiki.parseContinuousToSingle(
     templateKey: String? = null
 ) = if (templateKey == null) parsePropertiesToSingle(getContinuous(titles, template, properties, key))
 else parsePropertiesToSingle(getContinuous(titles, template, properties, key), templateKey)
-
 private fun parsePropertiesToSingle(map: Map<String, List<JsonObject?>>, key: String): Map<String, List<String>> =
     map.mapValues { (_, value) -> value.mapNotNull { it?.getString(key) } }
-
 private fun parsePropertiesToSingle(map: Map<String, List<JsonObject?>>) = parsePropertiesToSingle(map, "title")
 private fun parsePropertiesToDouble(
     map: Map<String, List<JsonObject?>>,
@@ -282,7 +295,7 @@ private fun OsrsWiki.processBulk(
 ) {
     val queue = GroupQueue(titles, configuration.groupQueryLimit)
     var completed = 0
-
+    val start = System.currentTimeMillis()
     if (titles.size > 10) {
         sharedLoad(
             jobs = minOf(titles.size, configuration.maxRequestJobs),
@@ -305,6 +318,7 @@ private fun OsrsWiki.processBulk(
             completed += next.size
         }
     }
+    println("\rProcessed Bulk Request of ${titles.size} titles in ${(System.currentTimeMillis() - start).toSecondsString()}")
 }
 
 private fun OsrsWiki.getContinuous(
