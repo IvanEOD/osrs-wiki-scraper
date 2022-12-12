@@ -1,5 +1,6 @@
 package org.tribot.wikiscraper.lua
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -21,6 +22,7 @@ private fun toLuaValueString(value: Any): String = when (value) {
             (k, v) -> "${toLuaKeyString(k!!)}=${toLuaValueString(v!!)}"
     }
     is List<*> -> value.joinToString(",", "{", "}") { toLuaValueString(it!!) }
+    is LocalModifier<*> -> toLuaValueString(value.value)
     else -> throw IllegalArgumentException("Cannot convert $value to Lua")
 }
 
@@ -30,13 +32,13 @@ annotation class LocalScopeMarker
 @LocalScopeMarker
 interface LocalScope {
 
-    fun String.local() = with (LocalModifier) { this@LocalScope(this) }
-    fun Date.local() = with (LocalModifier) { this@LocalScope(this) }
-    fun Boolean.local() = with (LocalModifier) { this@LocalScope(this) }
-    fun Number.local() = with (LocalModifier) { this@LocalScope(this) }
-    fun Map<*, *>.local() = with (LocalModifier) { this@LocalScope(this) }
-    fun Iterable<*>.local() = with (LocalModifier) { this@LocalScope(this) }
-    fun LuaTableBuilder.local() = with (LocalModifier) { this@LocalScope(this) }
+    fun String.local() = LocalModifier.new(this)
+    fun Date.local() = LocalModifier.new(this)
+    fun Boolean.local() = LocalModifier.new(this)
+    fun Number.local() = LocalModifier.new(this)
+    fun Map<*, *>.local() = LocalModifier.new(this)
+    fun Iterable<*>.local() = LocalModifier.new(this)
+    fun LuaTableBuilder.local() = LocalModifier.new(this)
 
 }
 
@@ -54,6 +56,7 @@ sealed interface LuaScope {
 
     operator fun String.unaryPlus(): LuaScope
 
+
     fun toLua(): String
 
 
@@ -64,12 +67,23 @@ interface LuaGlobalScope: LuaScope, LocalScope {
         get() = this
 
     infix fun <T: Any> String.`=`(value: LocalModifier<T>): LuaScope = privateSet(this, value.value, true)
+
+    operator fun File.unaryPlus(): LuaGlobalScope {
+        if (!exists()) throw IllegalArgumentException("File $this does not exist")
+        val code = readText()
+        +code
+        return this@LuaGlobalScope
+    }
+
+
+
+
 }
+
 
 class LocalModifier<T: Any> private constructor(val value: T) {
     companion object {
-
-        operator fun <T: Any> LocalScope.invoke(value: T): LocalModifier<T> = LocalModifier(value)
+        internal fun <T: Any> new(value: T) = LocalModifier(value)
     }
 }
 

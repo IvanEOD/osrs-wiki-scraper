@@ -72,3 +72,41 @@ function printReturn(value)
     print(mw.text.jsonEncode(response))
 end
 
+--{{#dpl:
+--          |titlematch=Baby chinchompa
+--|include={Infobox Item}.templatevalues
+--|format=__NOTOC__,
+--}}
+
+function getAllTemplates(title)
+    local templates = dpl.ask {
+        title = title,
+        include = '{Infobox Item}.templatevalues',
+    }
+    return templates
+end
+
+
+
+--Template:Chinchompas
+--Template:CiteTwitter
+--Template:Ctg
+--Template:External
+--Template:Hastranscript
+--Template:Hastranscript/t
+--Template:Hatnote
+--Template:Infobox Item
+--Template:Infobox NPC
+--Template:Mes
+--Template:Multi Infobox
+--Template:Navbox
+--Template:Otheruses
+--Template:Pets
+--Template:Plink
+--Template:Reflist
+--Template:Subject changes
+--Template:Subject changes footer
+--Template:Subject changes header
+--Template:Synced switch
+--Template:UD
+--Template:Wp
