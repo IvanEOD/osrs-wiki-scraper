@@ -28,8 +28,14 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         inSessionAddedCode += "\n\n$code\n\n"
     }
 
+    init {
+        loadSession()
+
+    }
+
     private fun loadMainLua(): String {
-        return File("C:\\Users\\ivanc\\OneDrive\\Desktop\\osrs-wiki-scraper\\src\\main\\kotlin\\org\\tribot\\wikiscraper\\Scribunto.lua").readText()
+        return File("src/main/kotlin/org/tribot/wikiscraper/lua/Scribunto.lua").readText()
+//        return File("C:\\Users\\ivanc\\OneDrive\\Desktop\\osrs-wiki-scraper\\src\\main\\kotlin\\org\\tribot\\wikiscraper\\Scribunto.lua").readText()
     }
 
     @Throws(ScribuntoError::class)
@@ -39,7 +45,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         val error = responseJson.has("error")
         if (error) {
             val errorMessage = responseJson.getNestedJsonObject("error")?.getString("info") ?: "Unknown error"
-            throw ScribuntoRequestError(errorMessage)
+            throw ScribuntoRequestError(sessionId, errorMessage)
         }
         val result = ScribuntoRequestResult.fromJsonObject(responseJson)
         result.throwIfError()
@@ -58,7 +64,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         parameters["question"] = module + inBuilderAddedCode + inSessionAddedCode
         val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
         val result = processResponse(response)
-        if (sessionSize / sessionMaxSize.toDouble() > 0.95) throw ScribuntoSessionSizeTooLarge
+        if (sessionSize / sessionMaxSize.toDouble() > 0.95) throw ScribuntoSessionSizeTooLarge(sessionId)
 
     }
 
@@ -79,13 +85,14 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         else runCatching { asBoolean }.getOrDefault(false)
 
     @Throws(ScribuntoError::class)
-    fun loadToSession(code: String) {
+    fun loadToSession(block: LuaScope.() -> Unit) {
+        val code = lua(block)
         addToSession(code)
         val response = request(code)
-        if (!response.isSuccessResponse()) throw ScribuntoGeneralError("Error loading code to session: $response")
+        if (!response.isSuccessResponse()) throw ScribuntoGeneralError(sessionId, "Error loading code to session: $response")
     }
 
-
+    fun request(block: LuaScope.() -> Unit): JsonElement = request(lua(block))
     fun request(code: String): JsonElement {
 
         val parameters = mutableMapOf<String, String>()
@@ -95,7 +102,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
                 if (!checkSession()) loadSession()
             }
             parameters["session"] = sessionId.toString()
-        }
+        } else loadSession()
         parameters["question"] = code
         val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
         val result = processResponse(response)
@@ -124,14 +131,12 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         @Throws(ScribuntoError::class)
         fun throwIfError() {
             if (isError()) {
-                if (messageName == "scribunto-lua-error-location") throw ScribuntoLuaError(message)
-                else throw ScribuntoGeneralError(message)
+                if (messageName == "scribunto-lua-error-location") throw ScribuntoLuaError(session, message)
+                else throw ScribuntoGeneralError(session, message)
             }
         }
 
-        override fun toString(): String {
-            return "RequestResult(type='$type', print=$print, returnObject=$returnObject, html='$html', message='$message', messageName='$messageName', session=$session, sessionSize=$sessionSize, sessionMaxSize=$sessionMaxSize)"
-        }
+        override fun toString(): String = "RequestResult(type='$type', print=$print, returnObject=$returnObject, html='$html', message='$message', messageName='$messageName', session=$session, sessionSize=$sessionSize, sessionMaxSize=$sessionMaxSize)"
 
         companion object {
 
@@ -172,9 +177,6 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         }
     }
 
-
-
-
     inner class Builder internal constructor() {
 
         fun checkSessionAfter(time: Long, unit: TimeUnit): Builder {
@@ -203,7 +205,11 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     }
 
 }
-
+//https://oldschool.runescape.wiki/w/Module:DPLlua
+//https://followthescore.org/dpldemo/index.php?title=Category:DPL_Manual
+//https://followthescore.org/dpldemo/index.php?title=DPL:Manual
+//https://followthescore.org/dpldemo/index.php?title=DPL:Manual_-_General_Usage_and_Invocation_Syntax
+//https://followthescore.org/dpldemo/index.php?title=DPL:Manual_-_DPL_parameters:_Criteria_for_page_selection
 
 fun main() {
     val wiki = OsrsWiki.builder().build()
@@ -212,7 +218,11 @@ fun main() {
 
     }
 
-    session.request("printReturn(isSessionLoaded())")
+    val response = session.request {
+        +"printReturn(isSessionLoaded())"
+    }
+
+    println(response)
 
     println("Loading main lua")
 

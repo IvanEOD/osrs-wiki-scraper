@@ -2,46 +2,45 @@ local dpl = require('Module:DPLlua')
 local itemStats = require('Module:FetchItemStats')
 local plt = require('Module:PageListTools')
 
-local testTable = {
-    { tableName = "tableName " },
-    apples = { "apples" },
-}
-
 local function getTimestamp()
-    return os.date('%Y-%m-%d %H:%M:%S')
+    return os.date().format("%Y-%m-%d %H:%M:%S")
 end
 
 local function getTimeFromString(dateString)
-    return os.time({
+    return os.time {
         year = dateString:sub(1, 4),
         month = dateString:sub(6, 7),
         day = dateString:sub(9, 10),
         hour = dateString:sub(12, 13),
         min = dateString:sub(15, 16),
         sec = dateString:sub(18, 19)
-    })
+    }
 end
 
 function dplAskUses(uses, count, offset, include)
-    return dpl.ask({
+    return dpl.ask {
         namespace = '',
         uses = uses,
         count = count,
         offset = offset,
         include = include,
         ignorecase = true
-    })
+    }
 end
 
 function dplAskCategory(category, count, offset, include)
-    return dpl.ask({
+    return dpl.ask {
         namespace = '',
         category = category,
         count = count,
         offset = offset,
         include = include,
         ignorecase = true
-    })
+    }
+end
+
+function getAllLocationJson()
+
 end
 
 function getPagesInCategories(categories)
@@ -72,3 +71,4 @@ function printReturn(value)
     response['printReturn'] = value
     print(mw.text.jsonEncode(response))
 end
+
