@@ -6,6 +6,8 @@ local function getTimestamp()
     return os.date().format("%Y-%m-%d %H:%M:%S")
 end
 
+
+
 local function getTimeFromString(dateString)
     return os.time {
         year = dateString:sub(1, 4),
@@ -43,6 +45,15 @@ function getAllLocationJson()
 
 end
 
+function getTemplatesOnPage(title)
+    return dpl.ask {
+        namespace = '',
+        usedBy = title,
+        ignorecase = true,
+    }
+end
+
+
 function getPagesInCategories(categories)
     local pages = {}
     for _, category in pairs(categories) do
@@ -54,17 +65,9 @@ function getPagesInCategories(categories)
     return pages
 end
 
-function toJson(tbl)
-    return mw.text.jsonEncode(tbl)
-end
-
-function getPagesInCategoriesJson(categories)
-    return toJson(getPagesInCategories(categories))
-end
-
-function isSessionLoaded()
-    return true
-end
+function toJson(tbl) return mw.text.jsonEncode(tbl) end
+function getPagesInCategoriesJson(categories) return toJson(getPagesInCategories(categories)) end
+function isSessionLoaded() return true end
 
 function printReturn(value)
     local response = {}

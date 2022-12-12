@@ -205,11 +205,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     }
 
 }
-//https://oldschool.runescape.wiki/w/Module:DPLlua
-//https://followthescore.org/dpldemo/index.php?title=Category:DPL_Manual
-//https://followthescore.org/dpldemo/index.php?title=DPL:Manual
-//https://followthescore.org/dpldemo/index.php?title=DPL:Manual_-_General_Usage_and_Invocation_Syntax
-//https://followthescore.org/dpldemo/index.php?title=DPL:Manual_-_DPL_parameters:_Criteria_for_page_selection
+
 
 fun main() {
     val wiki = OsrsWiki.builder().build()
@@ -223,6 +219,8 @@ fun main() {
     }
 
     println(response)
+
+
 
     println("Loading main lua")
 
