@@ -1,48 +1,53 @@
 package org.tribot.wikiscraper.lua
 
-import org.tribot.wikiscraper.utility.pipeFence
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
 
 
 /* Written by IvanEOD 12/12/2022, at 2:26 PM */
 
-fun ScribuntoSession.ask(query: Map<String, Any>) {
+fun ScribuntoSession.ask(query: Map<String, Any>): JsonElement {
     val response = request {
         "query" `=` query.local()
         +"dplAsk(query)"
     }
-    println(response)
+    return response
 }
 
 fun ScribuntoSession.getTemplatesOnPage(title: String): List<String> {
-    val list = mutableListOf<String>()
-
     val response = request {
         +"getTemplatesOnPage('$title')"
     }
-
-    println(response)
-
-    return list
+    return responseToArray(response).map { it.asString }
 }
-fun ScribuntoSession.getPagesInCategory(vararg category: String): List<String> {
-    val list = mutableListOf<String>()
 
-    when (category.size) {
-        0 -> return list
-        1 -> {
+private val ignorePrefixes = listOf("Template:", "Module:", "Category:", ":Category:", "File:")
+
+fun ScribuntoSession.getPagesInCategory(vararg categories: String): List<String> {
+    val list = mutableListOf<String>()
+    val chunkSize = 1000
+    for (category in categories) {
+        var offset = 0
+        while (true) {
             val response = request {
-                +"getPagesInCategories({ '${category[0]}' })"
+                +"getPagesInCategory('$category', $chunkSize, $offset)"
             }
-            println(response)
-        }
-        else -> {
-            val response = request {
-                "categories" `=` category.toList().local()
-                +"getPagesInCategories(categories)"
-            }
-            println(response)
+            val titles = responseToArray(response)
+            titles.forEach { list.add(it.asString) }
+            if (titles.size() < chunkSize) break
+            else offset += chunkSize
         }
     }
+    return list.filter { title -> ignorePrefixes.none { title.startsWith(it) } }.distinct()
+}
 
-    return list
+private fun responseToArray(response: JsonElement): JsonArray {
+    val responseObject = response.asJsonObject
+    responseObject.remove("DPL time")
+    responseObject.remove("Parse time")
+    val array = JsonArray()
+    responseObject.entrySet().forEach {
+        array.add(it.value)
+    }
+    return array
 }

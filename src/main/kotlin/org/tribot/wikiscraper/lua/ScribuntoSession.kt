@@ -62,7 +62,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         parameters["title"] = "Var"
         parameters["clear"] = "1"
         parameters["question"] = module + inBuilderAddedCode + inSessionAddedCode
-        val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
+        val response = wiki.formGet("scribunto-console", parameters)?.body?.string() ?: ""
         val result = processResponse(response)
         if (sessionSize / sessionMaxSize.toDouble() > 0.95) throw ScribuntoSessionSizeTooLarge(sessionId)
 
@@ -94,7 +94,6 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
 
     fun request(block: LuaGlobalScope.() -> Unit): JsonElement = request(lua(block))
     fun request(code: String): JsonElement {
-
         val parameters = mutableMapOf<String, String>()
         parameters["title"] = "Var"
         if (sessionId != -1) {
@@ -210,32 +209,19 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
 
 
 fun main() {
-//    val wiki = OsrsWiki.builder().build()
-//    val session = wiki.scribuntu {
-//        checkSessionAfter(5, TimeUnit.MINUTES)
-//
-//    }
-//
-//    val title = "Baby chinchompa"
-//
-//    session.getTemplatesOnPage(title)
-//
-//    session.getPagesInCategory("Items")
-//
-//    println("Loading main lua")
+    val wiki = OsrsWiki.builder().build()
+    val session = wiki.scribuntu {
+        checkSessionAfter(5, TimeUnit.MINUTES)
 
-
-    val table = mapOf(
-        "test1" to 1,
-        "test2" to 2,
-        "test3" to 3,
-        "test4" to 4,
-    )
-
-    table.forEach { (key, value) ->
-        println("$key = $value")
     }
 
+    val title = "Baby chinchompa"
+
+//    session.getTemplatesOnPage(title)
+
+    println(session.getPagesInCategory("Items"))
+
+    println("Loading main lua")
 
 
 

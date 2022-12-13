@@ -49,6 +49,15 @@ class OsrsWiki private constructor() {
         }
     }
 
+    fun formGet(action: String, form: Map<String, String>): Response? {
+        return try {
+            client.formGet(propertyMap("action", action, "format", "json"), form)
+        } catch (throwable: Throwable) {
+            throwable.printStackTrace()
+            null
+        }
+    }
+
     fun basicPost(action: String, form: Map<String, String>): Response? {
         return try {
             client.basicPost(propertyMap("action", action, "format", "json"), form)
@@ -144,6 +153,12 @@ class OsrsWiki private constructor() {
             .apply { form.forEach(this::add) }.let {
                 client.newCall(startRequest(parameters).post(it.build()).build()).execute()
             }
+
+        internal fun formGet(parameters: Map<String, String>, form: Map<String, String>): Response = FormBody.Builder()
+            .apply { form.forEach(this::add) }.let {
+                client.newCall(startRequest(parameters).post(it.build()).build()).execute()
+            }
+
     }
     inner class Configuration internal constructor() {
         val baseUrl = "https://oldschool.runescape.wiki/api.php".toHttpUrl()
