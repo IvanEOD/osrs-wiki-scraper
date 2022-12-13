@@ -56,7 +56,6 @@ sealed interface LuaScope {
 
     operator fun String.unaryPlus(): LuaScope
 
-
     fun toLua(): String
 
 
@@ -75,7 +74,20 @@ interface LuaGlobalScope: LuaScope, LocalScope {
         return this@LuaGlobalScope
     }
 
+    fun require(module: String): LuaGlobalScope {
+        if (module.isEmpty()) return this
+        var name = module
+        if (name.startsWith("Module:")) name = name.substring(7).ifEmpty { return this }
+        name = name.replaceFirstChar { it.lowercase() }.split(" ").joinToString { "" }
+        return require(name, module)
+    }
 
+    fun require(variableName: String, module: String): LuaGlobalScope {
+        val moduleName = if (module.startsWith("Module:")) module else "Module:$module"
+        //
+
+        return this
+    }
 
 
 }

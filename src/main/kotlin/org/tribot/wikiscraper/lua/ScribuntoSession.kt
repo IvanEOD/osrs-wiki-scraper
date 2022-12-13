@@ -76,7 +76,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     @Throws(ScribuntoError::class)
     private fun checkSession() : Boolean {
         if (sessionId == -1) return false
-        val response = request("printReturn(isSessionLoaded())")
+        val response = request(false,"isSessionLoaded()")
         if (response.isJsonNull) return false
         return runCatching { response.asBoolean }.getOrDefault(false)
     }
@@ -88,12 +88,12 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     fun loadToSession(block: LuaGlobalScope.() -> Unit) {
         val code = lua(block)
         addToSession(code)
-        val response = request(code)
+        val response = request(false, code)
         if (!response.isSuccessResponse()) throw ScribuntoGeneralError(sessionId, "Error loading code to session: $response")
     }
 
-    fun request(block: LuaGlobalScope.() -> Unit): JsonElement = request(lua(block))
-    fun request(code: String): JsonElement {
+    fun request(resetSession: Boolean = false, block: LuaGlobalScope.() -> Unit): JsonElement = request(resetSession, lua(block))
+    fun request(resetSession: Boolean = false, code: String): JsonElement {
         val parameters = mutableMapOf<String, String>()
         parameters["title"] = "Var"
         if (sessionId != -1) {
@@ -219,7 +219,13 @@ fun main() {
 
 //    session.getTemplatesOnPage(title)
 
-    println(session.getPagesInCategory("Items"))
+//    println(session.getPagesInCategory("Items", "Pets"))
+
+    val results = session.getAllExchangeData()
+
+    println(results)
+
+
 
     println("Loading main lua")
 

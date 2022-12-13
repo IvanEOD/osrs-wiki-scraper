@@ -18,9 +18,18 @@ internal val InstantDeserializer: JsonDeserializer<Instant> =
 internal val HttpUrlDeserializer: JsonDeserializer<HttpUrl> =
     JsonDeserializer { j, _, _ -> j.asJsonPrimitive.asString.toHttpUrlOrNull()!! }
 
+//13 December 2022 10:26:04 (UTC)
+internal val DateDeserializer: JsonDeserializer<Date> =
+    JsonDeserializer { j, _, _ ->
+      runCatching {
+          SimpleDateFormat("dd MMMM yyyy HH:mm:ss (z)", Locale.ENGLISH).parse(j.asJsonPrimitive.asString)
+      }.getOrNull() ?: j.asJsonPrimitive.asString.getDateNullable()
+    }
+
 internal val GSON: Gson = GsonBuilder()
     .registerTypeAdapter(Instant::class.java, InstantDeserializer)
     .registerTypeAdapter(HttpUrl::class.java, HttpUrlDeserializer)
+    .registerTypeAdapter(Date::class.java, DateDeserializer)
     .create()
 
 internal val WikiDoubleBracketDateRegex = "^\\[\\[(\\d+)\\s(\\w+)]]\\s\\[\\[(\\d+)]]".toRegex()
