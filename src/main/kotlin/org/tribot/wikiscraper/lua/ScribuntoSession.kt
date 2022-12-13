@@ -5,10 +5,10 @@ import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import org.tribot.wikiscraper.OsrsWiki
+import org.tribot.wikiscraper.utility.*
 import org.tribot.wikiscraper.utility.getNestedJsonObject
 import org.tribot.wikiscraper.utility.getString
 import org.tribot.wikiscraper.utility.htmlUnescape
-import org.tribot.wikiscraper.utility.msMinutes
 import java.io.File
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
@@ -85,14 +85,14 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         else runCatching { asBoolean }.getOrDefault(false)
 
     @Throws(ScribuntoError::class)
-    fun loadToSession(block: LuaScope.() -> Unit) {
+    fun loadToSession(block: LuaGlobalScope.() -> Unit) {
         val code = lua(block)
         addToSession(code)
         val response = request(code)
         if (!response.isSuccessResponse()) throw ScribuntoGeneralError(sessionId, "Error loading code to session: $response")
     }
 
-    fun request(block: LuaScope.() -> Unit): JsonElement = request(lua(block))
+    fun request(block: LuaGlobalScope.() -> Unit): JsonElement = request(lua(block))
     fun request(code: String): JsonElement {
 
         val parameters = mutableMapOf<String, String>()
@@ -103,6 +103,8 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
             }
             parameters["session"] = sessionId.toString()
         } else loadSession()
+        println("Submitting Code:")
+        println(code)
         parameters["question"] = code
         val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
         val result = processResponse(response)
@@ -208,21 +210,33 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
 
 
 fun main() {
-    val wiki = OsrsWiki.builder().build()
-    val session = wiki.scribuntu {
-        checkSessionAfter(5, TimeUnit.MINUTES)
+//    val wiki = OsrsWiki.builder().build()
+//    val session = wiki.scribuntu {
+//        checkSessionAfter(5, TimeUnit.MINUTES)
+//
+//    }
+//
+//    val title = "Baby chinchompa"
+//
+//    session.getTemplatesOnPage(title)
+//
+//    session.getPagesInCategory("Items")
+//
+//    println("Loading main lua")
 
+
+    val table = mapOf(
+        "test1" to 1,
+        "test2" to 2,
+        "test3" to 3,
+        "test4" to 4,
+    )
+
+    table.forEach { (key, value) ->
+        println("$key = $value")
     }
 
-    val response = session.request {
-        +"printReturn(isSessionLoaded())"
-    }
 
-    println(response)
-
-
-
-    println("Loading main lua")
 
 
 }
