@@ -34,7 +34,11 @@ class VersionedMap(val versions: Int, internal val properties: List<TemplateProp
 
     fun getVersion(version: Int = 0): Map<String, String> {
         if (version == 0) return combined
-        if (version > versions) throw IllegalArgumentException("Version $version does not exist, max version is $versions")
+        if (versions == 1) return combined
+        if (version > versions) {
+            println("Version $version does not exist, returning version 1")
+            throw IllegalArgumentException("Version $version does not exist, max version is $versions")
+        }
         val map = mutableMapOf<String, String>()
         keys.forEach { key ->
             map[key] = this[key, version]
@@ -45,6 +49,7 @@ class VersionedMap(val versions: Int, internal val properties: List<TemplateProp
     fun getIndividualVersions(): List<Map<String, String>> = (1..versions).map { getVersion(it) }
 
     operator fun get(key: String, version: Int = 0): String {
+        val finalVersion = if (version > versions) 1 else version
         val properties = this.properties.filter { it.name == key }
         if (properties.isEmpty()) {
             val byKey = properties.firstOrNull { it.key == key } ?: return ""

@@ -14,8 +14,8 @@ typealias LuaTableBuilder = LuaTableScope.() -> Unit
 private val LuaDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 private fun toLuaKeyString(key: Any): String = "[${toLuaValueString(key)}]"
 private fun toLuaValueString(value: Any): String = when (value) {
-    is String -> "'$value'"
-    is Date -> "'${LuaDateFormat.format(value)}'"
+    is String -> "\"$value\""
+    is Date -> "\"${LuaDateFormat.format(value)}\""
     is Boolean,
     is Number -> value.toString()
     is Map<*, *> -> value.entries.joinToString(",", "{", "}") {

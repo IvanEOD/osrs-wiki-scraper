@@ -251,9 +251,7 @@ class LuaTable constructor(val value: Map<KeyableLuaPrimitive, LuaPrimitive>) : 
 
 }
 
-data class LuaFunctionPrimitive(var value: LuaFunction) : LuaPrimitive {
-    override val type: LuaType = LuaType.Function
-}
+
 
 fun main() {
 

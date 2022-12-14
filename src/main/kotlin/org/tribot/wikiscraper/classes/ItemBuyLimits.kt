@@ -6,9 +6,7 @@ data class ItemBuyLimits(
     val lastWikiUpdateString: String,
     val items: Map<String, Int>
 ) {
-
     operator fun get(itemName: String): Int? = items[itemName]
-
 
     override fun toString(): String = "ItemBuyLimits(" +
             "lastWikiUpdate=$lastWikiUpdate, " +

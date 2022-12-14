@@ -1,13 +1,7 @@
 local dpl = require('Module:DPLlua')
 local itemStats = require('Module:FetchItemStats')
-local plt = require('Module:PageListTools')
 local exchange = require('Module:Exchange')
-local addcommas = require('Module:Addcommas')._add
 
-local sessionData = {}
-
--- @handle = tableAny
--- @type = function
 function tableAny(t, predicate)
     for k, v in ipairs(t) do
         if (predicate(k, v)) then
@@ -16,22 +10,16 @@ function tableAny(t, predicate)
     end
 end
 
--- @handle = tableNone
--- @type = function
 function tableNone(t, predicate)
     return not tableAny(t, predicate)
 end
 
--- @handle = tableEach
--- @type = function
 function tableEach(t, action)
     for k, v in ipairs(t) do
         action(k, v)
     end
 end
 
--- @handle = tableAll
--- @type = function
 function tableAll(t, predicate)
     for k, v in ipairs(t) do
         if (not predicate(k, v)) then
@@ -41,8 +29,6 @@ function tableAll(t, predicate)
     return true
 end
 
--- @handle = tableMap
--- @type = function
 function tableMap(t, mapper)
     local result = {}
     tableEach(t, function(k, v)
@@ -53,8 +39,6 @@ function tableMap(t, mapper)
     return result
 end
 
--- @handle = tableMapToList
--- @type = function
 function tableMapToList(t, mapper)
     local result = {}
     tableEach(t, function(key, value)
@@ -65,8 +49,6 @@ function tableMapToList(t, mapper)
     return result
 end
 
--- @handle = tableFilter
--- @type = function
 function tableFilter(t, predicate)
     return tableMap(t, function(key, value, callback)
         if (predicate(key, value)) then
@@ -75,88 +57,64 @@ function tableFilter(t, predicate)
     end)
 end
 
--- @handle = tableContainsKey
--- @type = function
 function tableContainsKey(t, key)
     tableAny(t, function(k, v)
         return k == key
     end)
 end
 
--- @handle = tableContainsValue
--- @type = function
 function tableContainsValue(t, value)
     tableAny(t, function(k, v)
         return v == value
     end)
 end
 
--- @handle = tableContains
--- @type = function
 function tableContains(t, value)
     tableAny(t, function(k, v)
         return k == value or v == value
     end)
 end
 
--- @handle = tableContainsAll
--- @type = function
 function tableContainsAll(t, values)
     tableAll(values, function(k, v)
         return tableContains(t, v)
     end)
 end
 
--- @handle = tableNotContainsKey
--- @type = function
 function tableNotContainsKey(t, key)
     tableNone(t, function(k, v)
         return k == key
     end)
 end
 
--- @handle = tableNotContainsValue
--- @type = function
 function tableNotContainsValue(t, value)
     tableNone(t, function(k, v)
         return v == value
     end)
 end
 
--- @handle = tableNotContains
--- @type = function
 function tableNotContains(t, value)
     tableNone(t, function(k, v)
         return k == value or v == value
     end)
 end
 
--- @handle = startsWith
--- @type = function
 function startsWith(string, prefix)
     return string:sub(1, #prefix) == prefix
 end
 
--- @handle = endsWith
--- @type = function
 function endsWith(string, suffix)
     return suffix == "" or string:sub(-#suffix) == suffix
 end
 
--- @handle = replaceAll
--- @type = function
 function replaceAll(string, find, replace)
     return string:gsub(find, replace)
 end
 
--- @handle = toJson
--- @type = function
 function toJson(tbl)
     return mw.text.jsonEncode(tbl)
 end
 
--- @handle = printReturnError
--- @type = function
 function printReturnError(message, value)
     local response = {}
     response['success'] = false
@@ -165,14 +123,6 @@ function printReturnError(message, value)
     print(toJson(response))
 end
 
-
---[[
-    @handle = printReturn
-    @type = function
-    @dependencies = toJson
-    @arguments = Any
-    @description = Prints the given value as JSON, this is how you get the results of your script.
---]]
 function printReturn(value)
     local response = {}
     response['success'] = true
@@ -180,12 +130,22 @@ function printReturn(value)
     print(toJson(response))
 end
 
+function dplAsk(query, printResults)
+    local results = dpl.ask(query)
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
+end
 
+function smwAsk(query, printResults)
+    local results = mw.smw.ask(query)
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
+end
 
--- @handle = parsePagesToList
--- @type = function
--- @dependencies =
--- @arguments =
 function parsePagesToList(dplResponse, filter, format)
     return tableMapToList(dplResponse, function(_, value, callback)
         local page = value
@@ -198,24 +158,16 @@ function parsePagesToList(dplResponse, filter, format)
     end)
 end
 
--- @handle = isSessionLoaded
--- @type = function
--- @dependencies =
--- @arguments =
 function isSessionLoaded()
     printReturn(true)
 end
 
--- @handle = loadExchangeData
--- @type = function
--- @dependencies =
--- @arguments =
-function loadExchangeData(items, ignoreErrors)
+
+
+function loadExchangeData(items, ignoreErrors, printResults)
     local itemData = {}
 
     for _, item in ipairs(items) do
-
-
         local title = exchange.checkTitle(item)
         local noErr, loadedData = pcall(mw.loadData, 'Module:Exchange/' .. title)
 
@@ -223,106 +175,116 @@ function loadExchangeData(items, ignoreErrors)
             if (not ignoreErrors) then
                 printReturnError("Error loading exchange data for item " .. tostring(title), data)
             end
-            return
         end
 
-        local data = {}
-        data.id = loadedData.itemId
-        data.icon = loadedData.icon
-        data.name = loadedData.item
-        data.value = loadedData.value
-        data.buyLimit = loadedData.limit
-        data.members = loadedData.members
-        data.category = loadedData.category
-        data.examine = loadedData.examine
-        data.highAlch = loadedData.hialch
-        data.lowAlch = loadedData.lowalch
-        data.price = exchange.loadBulkData(title, 'price')
-        data.date = exchange.loadBulkData('%LAST_UPDATE_F%', 'price')
-        data.last = exchange.loadBulkData(title, 'lastPrice')
-        data.lastDate = exchange.loadBulkData('%LAST_UPDATE_F%', 'lastPrice')
-        data.volume = exchange.loadBulkData(title, 'volume')
+        if noErr then
 
-        local changeperday = require('Module:ChangePerDay')._change
+            local data = {}
+            data.id = loadedData.itemId
+            data.icon = loadedData.icon
+            data.name = loadedData.item
+            data.value = loadedData.value
+            data.buyLimit = loadedData.limit
+            data.members = loadedData.members
+            data.category = loadedData.category
+            data.examine = loadedData.examine
+            data.highAlch = loadedData.hialch
+            data.lowAlch = loadedData.lowalch
+            data.price = exchange.loadBulkData(title, 'price')
+            data.date = exchange.loadBulkData('%LAST_UPDATE_F%', 'price')
+            data.last = exchange.loadBulkData(title, 'lastPrice')
+            data.lastDate = exchange.loadBulkData('%LAST_UPDATE_F%', 'lastPrice')
+            data.volume = exchange.loadBulkData(title, 'volume')
 
-        if data.last then
-            data.link = 'http://services.runescape.com/m=itemdb_oldschool/viewitem.ws?obj=' .. data.id
-            data.change = math.abs(changeperday({ data.price, data.last, data.date, data.lastDate }))
+            local changeperday = require('Module:ChangePerDay')._change
+
+            if data.last then
+                data.link = 'http://services.runescape.com/m=itemdb_oldschool/viewitem.ws?obj=' .. data.id
+                data.change = math.abs(changeperday({ data.price, data.last, data.date, data.lastDate }))
+            end
+            itemData[item] = data
         end
-
-        table.insert(itemData, data)
     end
-    printReturn(itemData)
+    if (printResults ~= nil and printResults) then
+        printReturn(itemData)
+    end
+    return itemData
 end
 
--- @handle = loadItemData
--- @type = function
--- @dependencies =
--- @arguments =
-function loadItemData(items)
+function loadItemData(items, printResults)
+    local itemData = {}
+    for _, item in pairs(items) do
+        local loaded = dpl.ask({
+            title = item,
+            include = "{Infobox Item}, {Infobox Bonuses}"
+        })
+        local exchangeData = loadExchangeData({item}, true)
 
+        local data = {
+            title = loaded[1].title,
+            info = loaded[1]["include"]["Infobox Item"],
+            bonuses = loaded[1]["include"]["Infobox Bonuses"],
+            exchangeData = exchangeData and exchangeData[item] or {}
+        }
+        itemData[item] = data
+    end
+    if (printResults ~= nil and printResults) then
+        printReturn(itemData)
+    end
+    return itemData
 end
 
--- @handle = dplAsk
--- @type = function
--- @dependencies =
--- @arguments =
-function dplAsk(query)
-    printReturn(dpl.ask(query))
-end
 
--- @handle = dplAskChunked
--- @type = function
--- @dependencies =
--- @arguments =
-function dplAskChunked(query, count, offset)
+
+
+
+function dplAskChunked(query, count, offset, printResults)
     query['count'] = count
     query['offset'] = offset
-    return dpl.ask(query)
+    local response = dpl.ask(query)
+    if (printResults ~= nil and printResults) then
+        printReturn(response)
+    end
+    return response
 end
 
--- @handle = getPagesInCategory
--- @type = function
--- @dependencies =
--- @arguments =
-function getPagesInCategory(category, count, offset)
+function getPagesInCategory(category, count, offset, printResults)
     local pages = dpl.ask {
         category = category,
         count = count,
         offset = offset,
         ignorecase = true
     }
-    return printReturn(pages)
+    if (printResults ~= nil and printResults) then
+        printReturn(pages)
+    end
+    return pages
 end
 
--- @handle = getTemplatesOnPage
--- @type = function
--- @dependencies =
--- @arguments =
-function getTemplatesOnPage(title)
-    printReturn(parsePagesToList(dpl.ask { usedBy = title, }, function(page)
+function getTemplatesOnPage(title, printResults)
+    local result = parsePagesToList(dpl.ask { usedBy = title, }, function(page)
         return startsWith(page, "Template:")
     end, function(page)
         return page:sub(10)
-    end))
+    end)
+    if (printResults ~= nil and printResults) then
+        printReturn(result)
+    end
+    return result
 end
 
--- @handle = getModulesOnPage
--- @type = function
--- @dependencies =
--- @arguments =
-function getModulesOnPage(title)
-    printReturn(parsePagesToList(dpl.ask { usedBy = title, }, function(page)
+function getModulesOnPage(title, printResults)
+    local result = parsePagesToList(dpl.ask { usedBy = title, }, function(page)
         return startsWith(page, "Module:")
     end, function(page)
         return page:sub(8)
-    end))
+    end)
+    if (printResults ~= nil and printResults) then
+        printReturn(result)
+    end
+    return result
 end
 
--- @handle = getAllLocationJson
--- @type = function
--- @dependencies =
--- @arguments =
 function getAllLocationJson()
 
 end

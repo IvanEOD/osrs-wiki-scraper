@@ -21,9 +21,9 @@ internal val HttpUrlDeserializer: JsonDeserializer<HttpUrl> =
 //13 December 2022 10:26:04 (UTC)
 internal val DateDeserializer: JsonDeserializer<Date> =
     JsonDeserializer { j, _, _ ->
-      runCatching {
-          SimpleDateFormat("dd MMMM yyyy HH:mm:ss (z)", Locale.ENGLISH).parse(j.asJsonPrimitive.asString)
-      }.getOrNull() ?: j.asJsonPrimitive.asString.getDateNullable()
+        runCatching {
+            SimpleDateFormat("dd MMMM yyyy HH:mm:ss (z)", Locale.ENGLISH).parse(j.asJsonPrimitive.asString)
+        }.getOrNull() ?: j.asJsonPrimitive.asString.getDateNullable()
     }
 
 internal val GSON: Gson = GsonBuilder()
@@ -63,6 +63,7 @@ fun Long.toDate(format: String): String {
     val formatter = SimpleDateFormat(format)
     return formatter.format(date)
 }
+
 internal fun String.urlEncode() = java.net.URLEncoder.encode(this, "UTF-8")
 internal fun String.htmlUnescape(): String = StringEscapeUtils.unescapeHtml4(this)
 internal fun String.toJsonObject(): JsonObject? = try {
@@ -70,6 +71,7 @@ internal fun String.toJsonObject(): JsonObject? = try {
 } catch (e: Exception) {
     null
 }
+
 fun Regex.extractMatches(text: String) = findAll(text).map { it.value }.toList()
 fun Regex.getAllMatchGroups(text: String): List<String> {
     val matcher = toPattern().matcher(text)
@@ -79,6 +81,7 @@ fun Regex.getAllMatchGroups(text: String): List<String> {
     }
     return matches
 }
+
 internal fun JsonArray.toJsonObjectsList(): MutableList<JsonObject> = map { it.asJsonObject }.toMutableList()
 internal fun JsonObject.toJsonObjectsList(): MutableList<JsonObject> =
     entrySet().map { it.value.asJsonObject }.toMutableList()
@@ -117,11 +120,13 @@ internal fun JsonObject.getNestedJsonObject(vararg keys: String): JsonObject? {
     }
     return last
 }
+
 internal fun JsonObject.toStringMap(): Map<String, String> {
     val map = mutableMapOf<String, String>()
     entrySet().forEach { map[it.key] = it.value.asString }
     return map
 }
+
 internal fun JsonObject.toVersionedMap(): VersionedMap {
     val templateProperties = mutableListOf<TemplateProperty>()
     TemplateProperty.parse(this.keySet()).forEach(templateProperties::add)
@@ -137,7 +142,15 @@ internal fun JsonObject.toVersionedMap(): VersionedMap {
             val list = mutableListOf<String>()
             versions.forEachIndexed { index, versionKey ->
                 value = getString(versionKey)
-                if (value.isNotBlank()) values.add(TemplatePropertyData(property.name, versionKey, true, index + 1, value))
+                if (value.isNotBlank()) values.add(
+                    TemplatePropertyData(
+                        property.name,
+                        versionKey,
+                        true,
+                        index + 1,
+                        value
+                    )
+                )
                 list.add(value)
             }
             values.add(TemplatePropertyData(property.name, key, false, 0, list.joinToString(",")))
@@ -191,7 +204,6 @@ val skillNames = listOf(
 )
 
 
-
 fun String.isSkillName(): Boolean = skillNames.contains(this) || skillNames.contains(this.lowercase())
 
 inline fun <reified T : Any> String.getNullable(): T? = when (T::class) {
@@ -206,6 +218,7 @@ inline fun <reified T : Any> String.getNullable(): T? = when (T::class) {
             else -> this.toBooleanStrictOrNull() as? T
         }
     }
+
     Date::class -> getDateNullable() as? T
     else -> null
 }

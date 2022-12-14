@@ -1,9 +1,8 @@
 package org.tribot.wikiscraper.classes
 
-import org.tribot.wikiscraper.utility.DefaultDate
-import org.tribot.wikiscraper.utility.getDateNonNullable
-import org.tribot.wikiscraper.utility.getDateNullable
-import org.tribot.wikiscraper.utility.toWikiAlternateFormat
+import com.google.gson.JsonParser
+import org.tribot.wikiscraper.lua.WikiExchangeData
+import org.tribot.wikiscraper.utility.*
 import java.util.*
 
 
@@ -37,6 +36,7 @@ data class ItemDetails(
     val removalUpdate: String?,
     val lastUpdate: Date,
     val equipmentItemInfo: EquipmentItemInfo?,
+    val exchangeInfo: WikiExchangeData?,
     val isHistoricId: Boolean,
     val isBetaId: Boolean,
 ) {
@@ -45,6 +45,7 @@ data class ItemDetails(
     val lowAlchValue: Int get() = if (alchable) (value * 0.4).toInt() else 0
     val isEquipmentItem: Boolean get() = equipmentItemInfo != null && equippable
 
+    fun debug() = debug("")
     fun debug(prefix: String) {
         fun prefixPrint(string: String) = println("$prefix$string")
         prefixPrint("Item: $name${if (version.isNotEmpty()) " ($version)" else ""} [$id]")
@@ -77,6 +78,7 @@ data class ItemDetails(
         if (isHistoricId) prefixPrint("    isHistoricId: true")
         if (isBetaId) prefixPrint("    isBetaId: true")
         equipmentItemInfo?.debug("$prefix    ")
+        exchangeInfo?.debug("$prefix    ")
     }
 
 
@@ -85,48 +87,55 @@ data class ItemDetails(
 
     companion object {
 
-        private fun String.boolean(): Boolean = when (this.lowercase()) {
+        internal fun String.boolean(): Boolean = when (this.lowercase()) {
             "yes", "y", "true", "t", "1" -> true
             "no", "n", "false", "f", "0" -> false
             else -> startsWith("yes", true)
         }
 
-        fun fromMap(map: Map<String, String>, itemDetailsMap: Map<String, String> = emptyMap()): ItemDetails {
-            val equipment = if (itemDetailsMap.isNotEmpty()) EquipmentItemInfo.fromMap(itemDetailsMap) else null
+        fun fromMap(infoMap: Map<String, String>, bonusesMap: Map<String, String> = emptyMap()): ItemDetails {
+            val equipment = if (bonusesMap.isNotEmpty()) EquipmentItemInfo.fromMap(bonusesMap) else null
             var isHistoric = false
             var isBeta = false
-            var idString = map["id"] ?: ""
+            var idString = infoMap["id"] ?: ""
             if (idString.contains("hist")) isHistoric = true
             if (idString.contains("beta")) isBeta = true
             idString = idString.replace("hist", "").replace("beta", "")
             val id = idString.toIntOrNull() ?: -1
 
-            val name = map["name"] ?: ""
-            val version = map["version"] ?: ""
-            val image = map["image"] ?: ""
-            val aka = map["aka"]?.split(",") ?: emptyList()
-            val members = map["members"]?.boolean() ?: false
-            val alchable = map["alchable"]?.boolean() ?: true
-            val equippable = map["equipable"]?.boolean() ?: false
-            val tradeable = map["tradeable"]?.boolean() ?: false
-            val stackable = map["stackable"]?.boolean() ?: false
-            val stacksInBank = map["stacksinbank"]?.boolean() ?: true
-            val placeholder = map["placeholder"]?.boolean() ?: false
-            val quest = if (map["quest"] == "No") emptyList() else map["quest"]?.split(",") ?: emptyList()
-            val destroy = map["destroy"]?.split(",") ?: emptyList()
-            val options = map["options"]?.split(",") ?: emptyList()
-            val wornOptions = map["wornoptions"]?.split(",") ?: emptyList()
-            val edible = map["edible"]?.boolean() ?: false
-            val examine = map["examine"] ?: ""
-            val value = map["value"]?.toIntOrNull() ?: 0
-            val weight = map["weight"]?.toDoubleOrNull() ?: 0.0
-            val canSellOnExchange = map["exchange"]?.boolean() ?: tradeable
-            val buyLimit = map["buylimit"]?.toIntOrNull() ?: 0
-            val release = map["release"]?.getDateNonNullable() ?: DefaultDate
-            val update = map["update"] ?: ""
-            val removal = map["removal"]?.getDateNullable()
-            val removalUpdate = map["removalupdate"] ?: ""
-            val lastUpdate = map["lastupdate"]?.getDateNonNullable() ?: DefaultDate
+            val name = infoMap["name"] ?: ""
+            val version = infoMap["version"] ?: ""
+            val image = infoMap["image"] ?: ""
+            val aka = infoMap["aka"]?.split(",") ?: emptyList()
+            val members = infoMap["members"]?.boolean() ?: false
+            val alchable = infoMap["alchable"]?.boolean() ?: true
+            val equippable = infoMap["equipable"]?.boolean() ?: false
+            val tradeable = infoMap["tradeable"]?.boolean() ?: false
+            val stackable = infoMap["stackable"]?.boolean() ?: false
+            val stacksInBank = infoMap["stacksinbank"]?.boolean() ?: true
+            val placeholder = infoMap["placeholder"]?.boolean() ?: false
+            val quest = if (infoMap["quest"] == "No") emptyList() else infoMap["quest"]?.split(",") ?: emptyList()
+            val destroy = infoMap["destroy"]?.split(",") ?: emptyList()
+            val options = infoMap["options"]?.split(",") ?: emptyList()
+            val wornOptions = infoMap["wornoptions"]?.split(",") ?: emptyList()
+            val edible = infoMap["edible"]?.boolean() ?: false
+            val examine = infoMap["examine"] ?: ""
+            val value = infoMap["value"]?.toIntOrNull() ?: 0
+            val weight = infoMap["weight"]?.toDoubleOrNull() ?: 0.0
+            val canSellOnExchange = infoMap["exchange"]?.boolean() ?: tradeable
+            val buyLimit = infoMap["buylimit"]?.toIntOrNull() ?: 0
+            val release = infoMap["release"]?.getDateNonNullable() ?: DefaultDate
+            val update = infoMap["update"] ?: ""
+            val removal = infoMap["removal"]?.getDateNullable()
+            val removalUpdate = infoMap["removalupdate"] ?: ""
+            val lastUpdate = infoMap["lastupdate"]?.getDateNonNullable() ?: DefaultDate
+            val exchangeInfoString = infoMap["exchangeInfo"] ?: ""
+
+            val exchangeInfo = if (exchangeInfoString.isNotEmpty()) {
+                val json = JsonParser.parseString(exchangeInfoString)
+                GSON.fromJson(json, WikiExchangeData::class.java)
+            } else null
+
 
             return ItemDetails(
                 id, name, version, image,
@@ -135,7 +144,7 @@ data class ItemDetails(
                 destroy, options, wornOptions, edible,
                 examine, value, weight, canSellOnExchange, buyLimit,
                 release, update, removal, removalUpdate, lastUpdate,
-                equipment, isHistoric, isBeta
+                equipment, exchangeInfo, isHistoric, isBeta
             )
 
         }

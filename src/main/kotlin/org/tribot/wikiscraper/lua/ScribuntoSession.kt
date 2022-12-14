@@ -4,14 +4,16 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import kotlinx.coroutines.runBlocking
 import org.tribot.wikiscraper.OsrsWiki
+import org.tribot.wikiscraper.classes.ItemDetails
 import org.tribot.wikiscraper.utility.*
 import org.tribot.wikiscraper.utility.getNestedJsonObject
 import org.tribot.wikiscraper.utility.getString
 import org.tribot.wikiscraper.utility.htmlUnescape
 import java.io.File
-import java.time.temporal.ChronoUnit
 import java.util.concurrent.TimeUnit
+import kotlin.system.measureTimeMillis
 
 /* Written by IvanEOD 12/10/2022, at 3:55 PM */
 class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
@@ -74,25 +76,30 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     }
 
     @Throws(ScribuntoError::class)
-    private fun checkSession() : Boolean {
+    private fun checkSession(): Boolean {
         if (sessionId == -1) return false
-        val response = request(false,"isSessionLoaded()")
+        val response = request(false, "isSessionLoaded()")
         if (response.isJsonNull) return false
         return runCatching { response.asBoolean }.getOrDefault(false)
     }
 
     private fun JsonElement.isSuccessResponse(): Boolean = if (isJsonNull) false
-        else runCatching { asBoolean }.getOrDefault(false)
+    else runCatching { asBoolean }.getOrDefault(false)
 
     @Throws(ScribuntoError::class)
     fun loadToSession(block: LuaGlobalScope.() -> Unit) {
         val code = lua(block)
         addToSession(code)
         val response = request(false, code)
-        if (!response.isSuccessResponse()) throw ScribuntoGeneralError(sessionId, "Error loading code to session: $response")
+        if (!response.isSuccessResponse()) throw ScribuntoGeneralError(
+            sessionId,
+            "Error loading code to session: $response"
+        )
     }
 
-    fun request(resetSession: Boolean = false, block: LuaGlobalScope.() -> Unit): JsonElement = request(resetSession, lua(block))
+    fun request(resetSession: Boolean = false, block: LuaGlobalScope.() -> Unit): JsonElement =
+        request(resetSession, lua(block))
+
     fun request(resetSession: Boolean = false, code: String): JsonElement {
         val parameters = mutableMapOf<String, String>()
         parameters["title"] = "Var"
@@ -106,6 +113,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         println(code)
         parameters["question"] = code
         val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
+        println("Response = $response")
         val result = processResponse(response)
         return result.print?.get("printReturn") ?: JsonNull.INSTANCE
     }
@@ -121,7 +129,9 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         val sessionSize: Int,
         val sessionMaxSize: Int
     ) {
-        fun isError(): Boolean = type == "error"
+        fun isError(): Boolean =
+            type == "error" || print?.getAsJsonObject("printReturn")?.getAsJsonObject("success")?.asBoolean == false
+
         fun isLuaError(): Boolean = messageName.isNotEmpty() && messageName.startsWith("scribunto-lua-error")
 
         val hasPrints get() = print != null
@@ -137,7 +147,8 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
             }
         }
 
-        override fun toString(): String = "RequestResult(type='$type', print=$print, returnObject=$returnObject, html='$html', message='$message', messageName='$messageName', session=$session, sessionSize=$sessionSize, sessionMaxSize=$sessionMaxSize)"
+        override fun toString(): String =
+            "RequestResult(type='$type', print=$print, returnObject=$returnObject, html='$html', message='$message', messageName='$messageName', session=$session, sessionSize=$sessionSize, sessionMaxSize=$sessionMaxSize)"
 
         companion object {
 
@@ -221,14 +232,27 @@ fun main() {
 
 //    println(session.getPagesInCategory("Items", "Pets"))
 
-    val results = session.getAllExchangeData()
+//    val results = session.getAllExchangeData()
+    runBlocking {
+        val results: List<ItemDetails>
+        val time = measureTimeMillis {
+            results = session.getItemDetails("Black chinchompa")
+        }
+        results.forEach {
+            it.debug()
+        }
 
-    println(results)
+        println("Request completed in $time ms")
+    }
+
+
+
+
+
 
 
 
     println("Loading main lua")
-
 
 
 }

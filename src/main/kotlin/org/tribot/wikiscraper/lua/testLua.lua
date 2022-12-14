@@ -1,19 +1,2 @@
-
-function string:startsWith(value)
-    return self:sub(1, #value) == value
-end
-
-function table:forEach(method)
-    for k, v in pairs(self) do
-        method(k, v)
-    end
-end
-
-local t = {
-    test = 1,
-}
-
-t:forEach(function(k, v)
-    print(k, v)
-end)
-
+local data = { "1/3rds full jug", "1/5ths full bucket", "10th squad sigil", "18lb shot", "2/3rds full jug", "2/5ths full bucket", "20th anniversary boots", "20th anniversary bottom", "20th anniversary cape", "20th anniversary gloves", "20th anniversary hat", "20th anniversary necklace", "20th anniversary top", "22lb shot", "\'24-carat\' sword", "3/5ths full bucket", "3rd age amulet", "3rd age axe", "3rd age bow", "3rd age cloak", "3rd age druidic cloak", "3rd age druidic robe bottoms", "3rd age druidic robe top", "3rd age druidic staff", "3rd age full helmet", "3rd age kiteshield", "3rd age longsword", "3rd age mage hat", "3rd age pickaxe", "3rd age platebody", "3rd age platelegs", "3rd age plateskirt", "3rd age range coif", "3rd age range legs", "3rd age range top", "3rd age robe", "3rd age robe top", "3rd age vambraces", "3rd age wand", "4/5ths full bucket", "4th birthday hat", "5-gallon jug", "8-gallon jug", "9mm revolver", "??? mixture", "A big present", "A blue circle", "A blue pentagon", "A blue square", "A blue triangle", "A chair", "A container", "A dark disposition", "A dear friend", "A eyeglo null", "A green circle", "A green pentagon", "A green square", "A green triangle", "A handwritten book", "A jester stick", "A magic scroll", "A pattern", "A powdered wig", "A red circle", "A red pentagon", "A red square", "A red triangle", "A scribbled note", "A scruffy note", "A small key", "A special tiara", "A stone bowl", "A stone bowl (RuneScape 2 Beta)", "A taste of hope (book)", "A used spell", "A violet circle", "A violet pentagon", "A violet square", "A violet triangle", "A yellow circle", "A yellow pentagon", "A yellow square", "A yellow triangle", "Ablenkian\'s escape", "Absorption", "Abyssal ashes", "Abyssal bludgeon", "Abyssal blue dye", "Abyssal book", "Abyssal bracelet", "Abyssal dagger", "Abyssal green dye", "Abyssal head", "Abyssal incantation", "Abyssal lantern", "Abyssal needle", "Abyssal orphan", "Abyssal pearls", "Abyssal protector" }
+loadExchangeData(data)

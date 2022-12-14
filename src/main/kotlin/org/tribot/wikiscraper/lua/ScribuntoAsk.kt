@@ -2,8 +2,13 @@ package org.tribot.wikiscraper.lua
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
-import org.tribot.wikiscraper.utility.DefaultDate
+import com.google.gson.JsonNull
+import com.google.gson.reflect.TypeToken
+import org.tribot.wikiscraper.classes.ItemDetails
+import org.tribot.wikiscraper.classes.ItemDetails.Companion.boolean
+import org.tribot.wikiscraper.utility.*
 import org.tribot.wikiscraper.utility.GSON
+import org.tribot.wikiscraper.utility.toStringMap
 import java.util.*
 
 
@@ -15,17 +20,27 @@ object WikiModules {
     const val LastPricesData = "Module:LastPrices/data"
 }
 
-fun ScribuntoSession.ask(query: Map<String, Any>): JsonElement {
+private val WikiStringExchangeDataMapType = object : TypeToken<Map<String, WikiExchangeData>>() {}.type
+
+fun ScribuntoSession.dplAsk(query: Map<String, Any>): JsonElement {
     val response = request {
         "query" `=` query.local()
-        +"dplAsk(query)"
+        +"dplAsk(query, true)"
+    }
+    return response
+}
+
+fun ScribuntoSession.smwAsk(query: List<String>): JsonElement {
+    val response = request {
+        "query" `=` query.local()
+        +"smwAsk(query, true)"
     }
     return response
 }
 
 fun ScribuntoSession.getTemplatesOnPage(title: String): List<String> {
     val response = request {
-        +"getTemplatesOnPage('$title')"
+        +"getTemplatesOnPage(\"$title\", true)"
     }
     return responseToArray(response).map { it.asString }
 }
@@ -39,7 +54,7 @@ fun ScribuntoSession.getPagesInCategory(vararg categories: String): List<String>
         var offset = 0
         while (true) {
             val response = request {
-                +"getPagesInCategory('$category', $chunkSize, $offset)"
+                +"getPagesInCategory(\"$category\", $chunkSize, $offset, true)"
             }
             val titles = responseToArray(response)
             titles.forEach { list.add(it.asString) }
@@ -54,39 +69,96 @@ fun ScribuntoSession.getAllItemTitles(): List<String> = getPagesInCategory("Item
 
 fun ScribuntoSession.getExchangeData(itemName: String): WikiExchangeData {
     val response = request {
-        +"loadExchangeData({'$itemName'})"
+        +"loadExchangeData({\"$itemName\"}, true)"
     }
     return GSON.fromJson(response, WikiExchangeData::class.java)
 }
 
-fun ScribuntoSession.getExchangeData(itemNames: List<String>): List<WikiExchangeData> {
-    val list = mutableListOf<WikiExchangeData>()
+fun ScribuntoSession.getExchangeData(itemNames: List<String>): Map<String, WikiExchangeData> {
+    val map = mutableMapOf<String, WikiExchangeData>()
     val chunkSize = 100
     val max = itemNames.size
 
     itemNames.chunked(chunkSize).forEach { chunk ->
-      val response = request {
-          "sessionData" `=` chunk
-          +"loadExchangeData(sessionData)"
-      }
-        val data = GSON.fromJson(response, Array<WikiExchangeData>::class.java)
-        list.addAll(data)
-
+        val response = request {
+            "data" `=` chunk.local()
+            +"loadExchangeData(data, true, true)"
+        }
+        println("Response = $response")
+        val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
+        map.putAll(data)
     }
-    return list
+    return map
 }
 
-fun ScribuntoSession.getExchangeData(vararg itemNames: String): List<WikiExchangeData> =
+fun ScribuntoSession.getExchangeData(vararg itemNames: String): Map<String, WikiExchangeData> =
     getExchangeData(itemNames.toList())
 
 fun ScribuntoSession.getAllExchangeData(): Map<String, WikiExchangeData> {
     val titles = getAllItemTitles()
-    val data = getExchangeData(titles)
-
-    println(data)
-
-    return emptyMap()
+    return getExchangeData(titles)
 }
+
+private fun buildItemDetails(jsonElement: JsonElement): Pair<String, List<ItemDetails>> {
+    val list = mutableListOf<ItemDetails>()
+    val resultObject = jsonElement.asJsonObject
+    val info = resultObject["info"].asJsonObject
+    val bonusResult = resultObject["bonuses"]
+    val bonuses = if (bonusResult != null) {
+        if (bonusResult.isJsonArray) {
+            val array = bonusResult.asJsonArray
+            if (array.isEmpty) JsonNull.INSTANCE
+            else array[0].asJsonObject
+        } else if (bonusResult.isJsonObject) bonusResult.asJsonObject
+        else JsonNull.INSTANCE
+    } else JsonNull.INSTANCE
+    val title = resultObject["title"].asString
+    val infoboxVersions = info.toVersionedMap()
+    val bonusesVersions = if (!bonuses.isJsonNull) bonuses.asJsonObject.toVersionedMap() else null
+    val exchangeInfoJson = resultObject["exchangeData"].asJsonObject ?: JsonNull.INSTANCE
+    val exchangeData = if (exchangeInfoJson.isJsonNull) "" else exchangeInfoJson.toString()
+    val versionCount = infoboxVersions.versions
+    for (i in 0 until versionCount) {
+        val infobox = infoboxVersions.getVersion(i + 1).toMutableMap()
+        if ((infobox["exchange"]?.boolean() ?: infobox["tradeable"]?.boolean()) == true) infobox["exchangeInfo"] = exchangeData
+        val bonus = bonusesVersions?.getVersion(i + 1) ?: emptyMap()
+        val details = ItemDetails.fromMap(infobox, bonus)
+        list.add(details)
+    }
+    return title to list
+}
+
+fun ScribuntoSession.getItemDetails(itemName: String): List<ItemDetails> {
+    val result = request {
+        +"loadItemData({\"$itemName\"}, true)"
+    }
+    val itemResult = result.asJsonObject[itemName]
+    return buildItemDetails(itemResult).second
+}
+
+fun ScribuntoSession.getItemDetails(itemNames: List<String>): Map<String, List<ItemDetails>> {
+    val map = mutableMapOf<String, MutableList<ItemDetails>>()
+    val chunkSize = 100
+    val max = itemNames.size
+
+    itemNames.chunked(chunkSize).forEach { chunk ->
+        val response = request {
+            "sessionData" `=` chunk
+            +"loadItemData(sessionData, true)"
+        }
+        val data = response.asJsonObject
+        for (title in chunk) {
+            val result = data.getAsJsonObject(title)
+            val details = buildItemDetails(result)
+            val list = map.getOrPut(details.first) { mutableListOf() }
+            list.addAll(details.second)
+        }
+    }
+    return map
+}
+
+fun ScribuntoSession.getItemDetails(vararg itemNames: String): Map<String, List<ItemDetails>> =
+    getItemDetails(itemNames.toList())
 
 
 //fun ScribuntoSession.getVarbitTitles(): List<String> {
@@ -123,4 +195,31 @@ data class WikiExchangeData(
     var lastDate: Date = DefaultDate,
     var date: Date = DefaultDate,
     var members: Boolean = false,
-)
+) {
+
+    fun debug(prefix: String) {
+        fun prefixPrint(string: String) = println("$prefix$string")
+        prefixPrint("Exchange Data:")
+        prefixPrint("    Exchange Name: $name")
+        prefixPrint("    Exchange id: $id")
+        prefixPrint("    Data Graph Link: $link")
+        prefixPrint("    Price: $price")
+        prefixPrint("    Last price: $last")
+        prefixPrint("    Price change: $change")
+        prefixPrint("    Price date: $date")
+        prefixPrint("    Last price date: $lastDate")
+        prefixPrint("    Buy limit: $buyLimit")
+        prefixPrint("    Exchange volume: $volume")
+        prefixPrint("    Members: $members")
+        prefixPrint("    Icon: $icon")
+        prefixPrint("    Examine: $examine")
+        prefixPrint("    Value: $value")
+        prefixPrint("    High alch: $highAlch")
+        prefixPrint("    Low alch: $lowAlch")
+
+
+
+    }
+
+
+}
