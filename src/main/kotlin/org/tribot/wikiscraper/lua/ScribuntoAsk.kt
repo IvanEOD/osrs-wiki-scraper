@@ -3,12 +3,14 @@ package org.tribot.wikiscraper.lua
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonNull
+import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import org.tribot.wikiscraper.classes.ItemDetails
 import org.tribot.wikiscraper.classes.ItemDetails.Companion.boolean
+import org.tribot.wikiscraper.classes.LocationCoordinates
+import org.tribot.wikiscraper.classes.LocationDetails
 import org.tribot.wikiscraper.utility.*
 import org.tribot.wikiscraper.utility.GSON
-import org.tribot.wikiscraper.utility.toStringMap
 import java.util.*
 
 
@@ -91,6 +93,7 @@ fun ScribuntoSession.getExchangeData(itemNames: List<String>): Map<String, WikiE
     return map
 }
 
+
 fun ScribuntoSession.getExchangeData(vararg itemNames: String): Map<String, WikiExchangeData> =
     getExchangeData(itemNames.toList())
 
@@ -139,8 +142,6 @@ fun ScribuntoSession.getItemDetails(itemName: String): List<ItemDetails> {
 fun ScribuntoSession.getItemDetails(itemNames: List<String>): Map<String, List<ItemDetails>> {
     val map = mutableMapOf<String, MutableList<ItemDetails>>()
     val chunkSize = 100
-    val max = itemNames.size
-
     itemNames.chunked(chunkSize).forEach { chunk ->
         val response = request {
             "sessionData" `=` chunk
@@ -160,13 +161,90 @@ fun ScribuntoSession.getItemDetails(itemNames: List<String>): Map<String, List<I
 fun ScribuntoSession.getItemDetails(vararg itemNames: String): Map<String, List<ItemDetails>> =
     getItemDetails(itemNames.toList())
 
+private fun buildLocationDetails(name: String, element: JsonElement): LocationDetails {
+    val obj = element.asJsonObject
+    val locationType = obj["type"].asString
+    val geometryObject = obj["geometry"].asJsonObject
+    val geometryType= geometryObject["type"].asString
+    val coordinates = geometryObject["coordinates"].asJsonArray
+    val properties = obj["properties"].asJsonObject
+    val mapId = properties["mapID"].asInt
+    val plane = properties["plane"].asInt
+    val locationCoordinatesList = mutableListOf<LocationCoordinates>()
 
-//fun ScribuntoSession.getVarbitTitles(): List<String> {
-//
-//}
+    for (coordinate in coordinates) {
+        val coordinateList = GSON.fromJson(coordinate, Array<Array<Int>>::class.java)
+        for (coordinatePair in coordinateList) {
+            val x = coordinatePair[0]
+            val y = coordinatePair[1]
+            val location = LocationCoordinates(x, y, plane)
+            locationCoordinatesList.add(location)
+        }
+    }
 
+    return LocationDetails(locationType, mapId, geometryType, locationCoordinatesList)
+}
+
+fun ScribuntoSession.getTitlesWithLocationData(): List<String> {
+    val returnList = mutableListOf<String>()
+    runChunks(500) { chunkSize, offset ->
+        val request = request {
+            +"loadTitlesWithLocationData($chunkSize, $offset, true)"
+        }
+        val array = request.asJsonArray.map { cleanLocationName(it.asJsonArray[0].asString) }
+        val returnSize = array.size
+        returnList.addAll(array)
+        returnList.distinct()
+        returnSize
+    }
+    return returnList
+}
+
+fun ScribuntoSession.getLocationJson(): Map<String, List<LocationDetails>> {
+
+    val results = mutableMapOf<String, MutableList<LocationDetails>>()
+    runChunks(500) { chunkSize, offset ->
+        val response = request {
+            +"loadLocationData($chunkSize, $offset, true)"
+        }
+        val responseArray = responseToArray(response)
+        val responseSize = responseArray.size()
+        fun addLocation(name: String, location: LocationDetails) {
+            val list = results.getOrPut(name) { mutableListOf() }
+            list.add(location)
+        }
+
+        responseArray.forEach { element ->
+            val name = runCatching {
+                element.asJsonObject["1"].asString
+            }.onFailure {
+                println("Failed to get name for (${element.javaClass.simpleName}) $element")
+            }.getOrDefault("Unknown Name")
+            val cleanedName = cleanLocationName(name)
+            val json = element.asJsonObject["Location JSON"]
+            if (json.isJsonArray) {
+                val array = json.asJsonArray
+                array.forEach {
+                    val details = buildLocationDetails(cleanedName, JsonParser.parseString(it.asString))
+                    addLocation(cleanedName, details)
+                }
+            } else {
+                val details = buildLocationDetails(cleanedName, JsonParser.parseString(json.asString))
+                addLocation(cleanedName, details)
+            }
+        }
+        responseSize
+    }
+    return results
+}
+
+private fun cleanLocationName(name: String): String {
+    return name.replace("[[", "").replace("]]", "")
+        .split("|").last()
+}
 
 private fun responseToArray(response: JsonElement): JsonArray {
+    if (response is JsonArray) return response
     val responseObject = response.asJsonObject
     responseObject.remove("DPL time")
     responseObject.remove("Parse time")
@@ -222,4 +300,13 @@ data class WikiExchangeData(
     }
 
 
+}
+
+fun runChunks(chunkSize: Int, worker: (Int, Int) -> Int) {
+    var offset = 0
+    while (true) {
+        val processedAmount = worker(chunkSize, offset)
+        offset += processedAmount
+        if (processedAmount < chunkSize) break
+    }
 }

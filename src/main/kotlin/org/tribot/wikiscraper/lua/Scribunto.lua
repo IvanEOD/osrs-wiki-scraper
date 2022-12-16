@@ -162,8 +162,6 @@ function isSessionLoaded()
     printReturn(true)
 end
 
-
-
 function loadExchangeData(items, ignoreErrors, printResults)
     local itemData = {}
 
@@ -234,10 +232,6 @@ function loadItemData(items, printResults)
     return itemData
 end
 
-
-
-
-
 function dplAskChunked(query, count, offset, printResults)
     query['count'] = count
     query['offset'] = offset
@@ -285,12 +279,27 @@ function getModulesOnPage(title, printResults)
     return result
 end
 
-function getAllLocationJson()
-
+function loadTitlesWithLocationData(limit, offset, printResults)
+    local results = mw.smw.ask {
+        "[[Location JSON::+]]",
+        "limit = " .. limit,
+        "offset = " .. offset,
+    }
+    if (printResults ~= nil and printResults) then
+        printReturn(results)
+    end
+    return results
 end
 
-
-
-
-
-
+function loadLocationData(limit, offset, printResults)
+    local results = mw.smw.ask {
+        "[[Location JSON::+]]",
+        "?Location JSON",
+        "limit = " .. limit,
+        "offset = " .. offset
+    }
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
+end

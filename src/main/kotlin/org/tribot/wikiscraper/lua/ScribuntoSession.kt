@@ -113,7 +113,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         println(code)
         parameters["question"] = code
         val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
-        println("Response = $response")
+//        println("Response = $response")
         val result = processResponse(response)
         return result.print?.get("printReturn") ?: JsonNull.INSTANCE
     }
@@ -129,15 +129,10 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         val sessionSize: Int,
         val sessionMaxSize: Int
     ) {
-        fun isError(): Boolean =
-            type == "error" || print?.getAsJsonObject("printReturn")?.getAsJsonObject("success")?.asBoolean == false
-
-        fun isLuaError(): Boolean = messageName.isNotEmpty() && messageName.startsWith("scribunto-lua-error")
-
-        val hasPrints get() = print != null
-        val hasHtml get() = html.isNotEmpty()
-        val hasReturns get() = returnObject != null
-        val hasMessage get() = message.isNotEmpty()
+        fun isError(): Boolean {
+            if (type == "error") return true
+            return false
+        }
 
         @Throws(ScribuntoError::class)
         fun throwIfError() {
@@ -233,19 +228,30 @@ fun main() {
 //    println(session.getPagesInCategory("Items", "Pets"))
 
 //    val results = session.getAllExchangeData()
-    runBlocking {
-        val results: List<ItemDetails>
-        val time = measureTimeMillis {
-            results = session.getItemDetails("Black chinchompa")
-        }
-        results.forEach {
-            it.debug()
-        }
+//    runBlocking {
+//        val results: List<ItemDetails>
+//        val time = measureTimeMillis {
+//            results = session.getItemDetails("Black chinchompa")
+//        }
+//        results.forEach {
+//            it.debug()
+//        }
+//
+//        println("Request completed in $time ms")
+//    }
+//    val results = session.getTitlesWithLocationData()
+//        println(results)
+//
+//    println(results.size)
+//
 
-        println("Request completed in $time ms")
+    val results = session.getLocationJson()
+    for (result in results) {
+        println("${ result.key } = ${ result.value }")
     }
-
-
+//
+    println(results.entries.sumOf { it.value.size })
+//
 
 
 
