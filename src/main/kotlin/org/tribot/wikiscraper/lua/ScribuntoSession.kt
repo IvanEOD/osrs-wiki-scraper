@@ -222,7 +222,6 @@ fun main() {
     }
 
     val title = "Baby chinchompa"
-
 //    session.getTemplatesOnPage(title)
 
 //    println(session.getPagesInCategory("Items", "Pets"))

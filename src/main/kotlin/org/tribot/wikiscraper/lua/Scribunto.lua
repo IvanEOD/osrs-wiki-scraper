@@ -291,6 +291,7 @@ function loadTitlesWithLocationData(limit, offset, printResults)
     return results
 end
 
+
 function loadLocationData(limit, offset, printResults)
     local results = mw.smw.ask {
         "[[Location JSON::+]]",
