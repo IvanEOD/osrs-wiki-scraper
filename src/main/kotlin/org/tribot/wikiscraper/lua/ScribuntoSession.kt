@@ -244,12 +244,18 @@ fun main() {
 //    println(results.size)
 //
 
-    val results = session.getLocationJson()
-    for (result in results) {
-        println("${ result.key } = ${ result.value }")
-    }
+    val results = session.getAllItemDetails()
+    println(results.size)
+
+//    val results = session.getLocationJson("Zaros Zeitgeist")
+//    println(results)
 //
-    println(results.entries.sumOf { it.value.size })
+//    val results = session.getLocationJson()
+//    for (result in results) {
+//        println("${ result.key } = ${ result.value }")
+//    }
+////
+//    println(results.entries.sumOf { it.value.size })
 //
 
 

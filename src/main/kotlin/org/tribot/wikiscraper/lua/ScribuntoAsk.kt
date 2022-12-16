@@ -7,7 +7,7 @@ import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import org.tribot.wikiscraper.classes.ItemDetails
 import org.tribot.wikiscraper.classes.ItemDetails.Companion.boolean
-import org.tribot.wikiscraper.classes.LocationCoordinates
+import org.tribot.wikiscraper.classes.Coordinates
 import org.tribot.wikiscraper.classes.LocationDetails
 import org.tribot.wikiscraper.utility.*
 import org.tribot.wikiscraper.utility.GSON
@@ -22,7 +22,6 @@ object WikiModules {
     const val LastPricesData = "Module:LastPrices/data"
 }
 
-private val WikiStringExchangeDataMapType = object : TypeToken<Map<String, WikiExchangeData>>() {}.type
 
 fun ScribuntoSession.dplAsk(query: Map<String, Any>): JsonElement {
     val response = request {
@@ -47,7 +46,7 @@ fun ScribuntoSession.getTemplatesOnPage(title: String): List<String> {
     return responseToArray(response).map { it.asString }
 }
 
-private val ignorePrefixes = listOf("Template:", "Module:", "Category:", ":Category:", "File:")
+
 
 fun ScribuntoSession.getPagesInCategory(vararg categories: String): List<String> {
     val list = mutableListOf<String>()
@@ -69,13 +68,13 @@ fun ScribuntoSession.getPagesInCategory(vararg categories: String): List<String>
 
 fun ScribuntoSession.getAllItemTitles(): List<String> = getPagesInCategory("Items", "Pets")
 
+
 fun ScribuntoSession.getExchangeData(itemName: String): WikiExchangeData {
     val response = request {
         +"loadExchangeData({\"$itemName\"}, true)"
     }
     return GSON.fromJson(response, WikiExchangeData::class.java)
 }
-
 fun ScribuntoSession.getExchangeData(itemNames: List<String>): Map<String, WikiExchangeData> {
     val map = mutableMapOf<String, WikiExchangeData>()
     val chunkSize = 100
@@ -92,43 +91,11 @@ fun ScribuntoSession.getExchangeData(itemNames: List<String>): Map<String, WikiE
     }
     return map
 }
-
-
 fun ScribuntoSession.getExchangeData(vararg itemNames: String): Map<String, WikiExchangeData> =
     getExchangeData(itemNames.toList())
-
 fun ScribuntoSession.getAllExchangeData(): Map<String, WikiExchangeData> {
     val titles = getAllItemTitles()
     return getExchangeData(titles)
-}
-
-private fun buildItemDetails(jsonElement: JsonElement): Pair<String, List<ItemDetails>> {
-    val list = mutableListOf<ItemDetails>()
-    val resultObject = jsonElement.asJsonObject
-    val info = resultObject["info"].asJsonObject
-    val bonusResult = resultObject["bonuses"]
-    val bonuses = if (bonusResult != null) {
-        if (bonusResult.isJsonArray) {
-            val array = bonusResult.asJsonArray
-            if (array.isEmpty) JsonNull.INSTANCE
-            else array[0].asJsonObject
-        } else if (bonusResult.isJsonObject) bonusResult.asJsonObject
-        else JsonNull.INSTANCE
-    } else JsonNull.INSTANCE
-    val title = resultObject["title"].asString
-    val infoboxVersions = info.toVersionedMap()
-    val bonusesVersions = if (!bonuses.isJsonNull) bonuses.asJsonObject.toVersionedMap() else null
-    val exchangeInfoJson = resultObject["exchangeData"].asJsonObject ?: JsonNull.INSTANCE
-    val exchangeData = if (exchangeInfoJson.isJsonNull) "" else exchangeInfoJson.toString()
-    val versionCount = infoboxVersions.versions
-    for (i in 0 until versionCount) {
-        val infobox = infoboxVersions.getVersion(i + 1).toMutableMap()
-        if ((infobox["exchange"]?.boolean() ?: infobox["tradeable"]?.boolean()) == true) infobox["exchangeInfo"] = exchangeData
-        val bonus = bonusesVersions?.getVersion(i + 1) ?: emptyMap()
-        val details = ItemDetails.fromMap(infobox, bonus)
-        list.add(details)
-    }
-    return title to list
 }
 
 fun ScribuntoSession.getItemDetails(itemName: String): List<ItemDetails> {
@@ -138,7 +105,6 @@ fun ScribuntoSession.getItemDetails(itemName: String): List<ItemDetails> {
     val itemResult = result.asJsonObject[itemName]
     return buildItemDetails(itemResult).second
 }
-
 fun ScribuntoSession.getItemDetails(itemNames: List<String>): Map<String, List<ItemDetails>> {
     val map = mutableMapOf<String, MutableList<ItemDetails>>()
     val chunkSize = 100
@@ -157,33 +123,14 @@ fun ScribuntoSession.getItemDetails(itemNames: List<String>): Map<String, List<I
     }
     return map
 }
-
 fun ScribuntoSession.getItemDetails(vararg itemNames: String): Map<String, List<ItemDetails>> =
     getItemDetails(itemNames.toList())
-
-private fun buildLocationDetails(name: String, element: JsonElement): LocationDetails {
-    val obj = element.asJsonObject
-    val locationType = obj["type"].asString
-    val geometryObject = obj["geometry"].asJsonObject
-    val geometryType= geometryObject["type"].asString
-    val coordinates = geometryObject["coordinates"].asJsonArray
-    val properties = obj["properties"].asJsonObject
-    val mapId = properties["mapID"].asInt
-    val plane = properties["plane"].asInt
-    val locationCoordinatesList = mutableListOf<LocationCoordinates>()
-
-    for (coordinate in coordinates) {
-        val coordinateList = GSON.fromJson(coordinate, Array<Array<Int>>::class.java)
-        for (coordinatePair in coordinateList) {
-            val x = coordinatePair[0]
-            val y = coordinatePair[1]
-            val location = LocationCoordinates(x, y, plane)
-            locationCoordinatesList.add(location)
-        }
-    }
-
-    return LocationDetails(locationType, mapId, geometryType, locationCoordinatesList)
+fun ScribuntoSession.getAllItemDetails(): Map<String, List<ItemDetails>> {
+    val titles = getAllItemTitles()
+    return getItemDetails(titles)
 }
+
+
 
 fun ScribuntoSession.getTitlesWithLocationData(): List<String> {
     val returnList = mutableListOf<String>()
@@ -199,7 +146,18 @@ fun ScribuntoSession.getTitlesWithLocationData(): List<String> {
     }
     return returnList
 }
-
+fun ScribuntoSession.getLocationJson(title: String): LocationDetails? {
+    val request = request {
+        +"loadLocationDataByTitle(\"$title\", true)"
+    }
+    val obj = if (request.isJsonArray)  {
+        val array = request.asJsonArray
+        if (array.isEmpty) return null
+        else array[0].asJsonObject
+    } else request.asJsonObject
+    val locationJson = JsonParser.parseString(obj["Location JSON"].asString)
+    return buildLocationDetails(locationJson)
+}
 fun ScribuntoSession.getLocationJson(): Map<String, List<LocationDetails>> {
 
     val results = mutableMapOf<String, MutableList<LocationDetails>>()
@@ -225,34 +183,17 @@ fun ScribuntoSession.getLocationJson(): Map<String, List<LocationDetails>> {
             if (json.isJsonArray) {
                 val array = json.asJsonArray
                 array.forEach {
-                    val details = buildLocationDetails(cleanedName, JsonParser.parseString(it.asString))
+                    val details = buildLocationDetails(JsonParser.parseString(it.asString))
                     addLocation(cleanedName, details)
                 }
             } else {
-                val details = buildLocationDetails(cleanedName, JsonParser.parseString(json.asString))
+                val details = buildLocationDetails(JsonParser.parseString(json.asString))
                 addLocation(cleanedName, details)
             }
         }
         responseSize
     }
     return results
-}
-
-private fun cleanLocationName(name: String): String {
-    return name.replace("[[", "").replace("]]", "")
-        .split("|").last()
-}
-
-private fun responseToArray(response: JsonElement): JsonArray {
-    if (response is JsonArray) return response
-    val responseObject = response.asJsonObject
-    responseObject.remove("DPL time")
-    responseObject.remove("Parse time")
-    val array = JsonArray()
-    responseObject.entrySet().forEach {
-        array.add(it.value)
-    }
-    return array
 }
 
 
@@ -310,3 +251,73 @@ fun runChunks(chunkSize: Int, worker: (Int, Int) -> Int) {
         if (processedAmount < chunkSize) break
     }
 }
+
+
+private fun buildItemDetails(jsonElement: JsonElement): Pair<String, List<ItemDetails>> {
+    val list = mutableListOf<ItemDetails>()
+    val resultObject = jsonElement.asJsonObject
+    val info = resultObject["info"].asJsonObject
+    val bonusResult = resultObject["bonuses"]
+    val bonuses = if (bonusResult != null) {
+        if (bonusResult.isJsonArray) {
+            val array = bonusResult.asJsonArray
+            if (array.isEmpty) JsonNull.INSTANCE
+            else array[0].asJsonObject
+        } else if (bonusResult.isJsonObject) bonusResult.asJsonObject
+        else JsonNull.INSTANCE
+    } else JsonNull.INSTANCE
+    val title = resultObject["title"].asString
+    val infoboxVersions = info.toVersionedMap()
+    val bonusesVersions = if (!bonuses.isJsonNull) bonuses.asJsonObject.toVersionedMap() else null
+    val exchangeInfoJson = resultObject["exchangeData"]?.let { if (it.isJsonObject) it.asJsonObject else JsonNull.INSTANCE } ?: JsonNull.INSTANCE
+    val exchangeData = if (exchangeInfoJson.isJsonNull) "" else exchangeInfoJson.toString()
+    val versionCount = infoboxVersions.versions
+    for (i in 0 until versionCount) {
+        val infobox = infoboxVersions.getVersion(i + 1).toMutableMap()
+        if ((infobox["exchange"]?.boolean() ?: infobox["tradeable"]?.boolean()) == true) infobox["exchangeInfo"] = exchangeData
+        val bonus = bonusesVersions?.getVersion(i + 1) ?: emptyMap()
+        val details = ItemDetails.fromMap(infobox, bonus)
+        list.add(details)
+    }
+    return title to list
+}
+private fun buildLocationDetails(element: JsonElement): LocationDetails {
+    val obj = element.asJsonObject
+    val locationType = obj["type"].asString
+    val geometryObject = obj["geometry"].asJsonObject
+    val geometryType= geometryObject["type"].asString
+    val coordinates = geometryObject["coordinates"].asJsonArray
+    val properties = obj["properties"].asJsonObject
+    val mapId = properties["mapID"].asInt
+    val plane = properties["plane"].asInt
+    val locationCoordinatesList = mutableListOf<Coordinates>()
+
+    for (coordinate in coordinates) {
+        val coordinateList = GSON.fromJson(coordinate, Array<Array<Int>>::class.java)
+        for (coordinatePair in coordinateList) {
+            val x = coordinatePair[0]
+            val y = coordinatePair[1]
+            val location = Coordinates(x, y, plane)
+            locationCoordinatesList.add(location)
+        }
+    }
+
+    return LocationDetails(locationType, mapId, geometryType, locationCoordinatesList)
+}
+private fun cleanLocationName(name: String): String {
+    return name.replace("[[", "").replace("]]", "")
+        .split("|").last()
+}
+private fun responseToArray(response: JsonElement): JsonArray {
+    if (response is JsonArray) return response
+    val responseObject = response.asJsonObject
+    responseObject.remove("DPL time")
+    responseObject.remove("Parse time")
+    val array = JsonArray()
+    responseObject.entrySet().forEach {
+        array.add(it.value)
+    }
+    return array
+}
+private val WikiStringExchangeDataMapType = object : TypeToken<Map<String, WikiExchangeData>>() {}.type
+private val ignorePrefixes = listOf("Template:", "Module:", "Category:", ":Category:", "File:")

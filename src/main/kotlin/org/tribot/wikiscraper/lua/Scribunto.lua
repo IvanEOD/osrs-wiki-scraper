@@ -203,7 +203,7 @@ function loadExchangeData(items, ignoreErrors, printResults)
             itemData[item] = data
         end
     end
-    if (printResults ~= nil and printResults) then
+    if (printResults) then
         printReturn(itemData)
     end
     return itemData
@@ -226,7 +226,7 @@ function loadItemData(items, printResults)
         }
         itemData[item] = data
     end
-    if (printResults ~= nil and printResults) then
+    if (printResults) then
         printReturn(itemData)
     end
     return itemData
@@ -236,7 +236,7 @@ function dplAskChunked(query, count, offset, printResults)
     query['count'] = count
     query['offset'] = offset
     local response = dpl.ask(query)
-    if (printResults ~= nil and printResults) then
+    if (printResults) then
         printReturn(response)
     end
     return response
@@ -249,7 +249,7 @@ function getPagesInCategory(category, count, offset, printResults)
         offset = offset,
         ignorecase = true
     }
-    if (printResults ~= nil and printResults) then
+    if (printResults) then
         printReturn(pages)
     end
     return pages
@@ -261,7 +261,7 @@ function getTemplatesOnPage(title, printResults)
     end, function(page)
         return page:sub(10)
     end)
-    if (printResults ~= nil and printResults) then
+    if (printResults) then
         printReturn(result)
     end
     return result
@@ -273,7 +273,7 @@ function getModulesOnPage(title, printResults)
     end, function(page)
         return page:sub(8)
     end)
-    if (printResults ~= nil and printResults) then
+    if (printResults) then
         printReturn(result)
     end
     return result
@@ -285,12 +285,23 @@ function loadTitlesWithLocationData(limit, offset, printResults)
         "limit = " .. limit,
         "offset = " .. offset,
     }
-    if (printResults ~= nil and printResults) then
+    if (printResults) then
         printReturn(results)
     end
     return results
 end
 
+function loadLocationDataByTitle(title, printResults)
+    local results = mw.smw.ask {
+        "[["..title.."]]",
+        "[[Location JSON::+]]",
+        "?Location JSON",
+    }
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
+end
 
 function loadLocationData(limit, offset, printResults)
     local results = mw.smw.ask {
