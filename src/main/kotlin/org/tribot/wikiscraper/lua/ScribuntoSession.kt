@@ -43,6 +43,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     @Throws(ScribuntoError::class)
     private fun processResponse(response: String): ScribuntoRequestResult {
         lastSessionCommunication = System.currentTimeMillis()
+        println("Response: $response")
         val responseJson = JsonParser.parseString(response.htmlUnescape()).asJsonObject
         val error = responseJson.has("error")
         if (error) {
@@ -253,7 +254,8 @@ fun main() {
 //    println(results.size)
 //
 
-    val results = session.getAllItemDetails()
+    val results = session.getAllExchangeData()
+//    val results = session.getAllItemDetails()
     println(results.size)
 
 //    val results = session.getLocationJson("Zaros Zeitgeist")

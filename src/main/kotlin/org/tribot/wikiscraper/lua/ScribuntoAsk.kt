@@ -53,7 +53,7 @@ fun ScribuntoSession.getTemplatesOnPage(title: String): List<String> {
 
 fun ScribuntoSession.getPagesInCategory(vararg categories: String): List<String> {
     val list = mutableListOf<String>()
-    val chunkSize = 1000
+    val chunkSize = 10000
     for (category in categories) {
         var offset = 0
         while (true) {
@@ -81,18 +81,22 @@ fun ScribuntoSession.getExchangeData(itemName: String): WikiExchangeData {
 
 fun ScribuntoSession.getExchangeData(itemNames: List<String>): Map<String, WikiExchangeData> {
     val map = mutableMapOf<String, WikiExchangeData>()
-    val chunkSize = 100
+    val chunkSize = 200
     val max = itemNames.size
-
-    itemNames.chunked(chunkSize).forEach { chunk ->
-        val (success, response) = request {
-            "data" `=` chunk.local()
-            +"loadExchangeData(data, true, true)"
+    val job = GlobalScope.launch {
+        itemNames.chunked(chunkSize).forEach { chunk ->
+            launch {
+                val (success, response) = request {
+                    "data" `=` chunk.local()
+                    +"loadExchangeData(data, true, true)"
+                }
+                println("Response = $response")
+                val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
+                map.putAll(data)
+            }
         }
-        println("Response = $response")
-        val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
-        map.putAll(data)
     }
+    runBlocking { job.join() }
     return map
 }
 
