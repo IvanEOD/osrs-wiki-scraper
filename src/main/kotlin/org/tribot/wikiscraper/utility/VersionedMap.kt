@@ -37,7 +37,8 @@ class VersionedMap(val versions: Int, internal val properties: List<TemplateProp
         if (versions == 1) return combined
         if (version > versions) {
             println("Version $version does not exist, returning version 1")
-            throw IllegalArgumentException("Version $version does not exist, max version is $versions")
+            return emptyMap()
+//            throw IllegalArgumentException("Version $version does not exist, max version is $versions")
         }
         val map = mutableMapOf<String, String>()
         keys.forEach { key ->
@@ -85,7 +86,7 @@ data class TemplatePropertyData(
 //    } else pageReferencesList
 
     internal val cleanValue: String get() = if (isImage) "https://oldschool.runescape.wiki/images/${images[0].replace(' ', '_').urlEncode()}"
-        else if (isDate) WikiAlternateDateFormatter.format(WikiDoubleBracketDateFormatter.parse(value))
+//        else if (isDate) WikiAlternateDateFormatter.format(WikiDoubleBracketDateFormatter.parse(value))
         else value
     private var remaining: String = ""
     private fun isOnlyOneItem(): Boolean = (images + files + pageReferences).size == 1

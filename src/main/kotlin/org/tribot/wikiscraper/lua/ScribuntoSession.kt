@@ -50,7 +50,8 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
             throw ScribuntoRequestError(sessionId, errorMessage)
         }
         val result = ScribuntoRequestResult.fromJsonObject(responseJson)
-        result.throwIfError()
+
+//        result.throwIfError()
         sessionId = result.session
         sessionSize = result.sessionSize
         sessionMaxSize = result.sessionMaxSize
@@ -78,44 +79,52 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     @Throws(ScribuntoError::class)
     private fun checkSession(): Boolean {
         if (sessionId == -1) return false
-        val response = request(false, "isSessionLoaded()")
-        if (response.isJsonNull) return false
+        val (success, response) = request(false, "isSessionLoaded()")
+        if (!success || response.isJsonNull) return false
         return runCatching { response.asBoolean }.getOrDefault(false)
     }
 
     private fun JsonElement.isSuccessResponse(): Boolean = if (isJsonNull) false
-    else runCatching { asBoolean }.getOrDefault(false)
+        else runCatching { asBoolean }.getOrDefault(false)
 
     @Throws(ScribuntoError::class)
     fun loadToSession(block: LuaGlobalScope.() -> Unit) {
         val code = lua(block)
         addToSession(code)
         val response = request(false, code)
-        if (!response.isSuccessResponse()) throw ScribuntoGeneralError(
+        if (!response.first || !response.second.isSuccessResponse()) throw ScribuntoGeneralError(
             sessionId,
             "Error loading code to session: $response"
         )
     }
 
-    fun request(resetSession: Boolean = false, block: LuaGlobalScope.() -> Unit): JsonElement =
+    fun request(resetSession: Boolean = false, block: LuaGlobalScope.() -> Unit): Pair<Boolean, JsonElement> =
         request(resetSession, lua(block))
 
-    fun request(resetSession: Boolean = false, code: String): JsonElement {
+    fun request(resetSession: Boolean = false, code: String, attempt: Int = 1): Pair<Boolean, JsonElement> {
         val parameters = mutableMapOf<String, String>()
         parameters["title"] = "Var"
-        if (sessionId != -1) {
+
+        if (!resetSession && sessionId != -1) {
             if (System.currentTimeMillis() - lastSessionCommunication > checkSessionAfter) {
                 if (!checkSession()) loadSession()
             }
             parameters["session"] = sessionId.toString()
         } else loadSession()
-        println("Submitting Code:")
-        println(code)
+
         parameters["question"] = code
         val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
-//        println("Response = $response")
         val result = processResponse(response)
-        return result.print?.get("printReturn") ?: JsonNull.INSTANCE
+        if (result.isError()) {
+            if (attempt > 3) result.throwIfError()
+            else {
+                println("Error in request, retrying...")
+//                reloadSession()
+                return request(true, code, attempt + 1)
+            }
+        }
+
+        return result.isError() to (result.print?.get("printReturn") ?: JsonNull.INSTANCE)
     }
 
     private data class ScribuntoRequestResult(
