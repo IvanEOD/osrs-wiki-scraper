@@ -125,7 +125,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
             }
         }
 
-        return result.isError() to (result.print?.get("printReturn") ?: JsonNull.INSTANCE)
+        return !result.isError() to (result.print?.get("printReturn") ?: JsonNull.INSTANCE)
     }
 
     private data class ScribuntoRequestResult(
@@ -254,7 +254,7 @@ fun main() {
 //    println(results.size)
 //
 
-    val results = session.getAllExchangeData()
+    val results = session.getAllItemDetails()
 //    val results = session.getAllItemDetails()
     println(results.size)
 

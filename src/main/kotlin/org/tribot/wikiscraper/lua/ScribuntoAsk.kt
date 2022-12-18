@@ -71,7 +71,6 @@ fun ScribuntoSession.getPagesInCategory(vararg categories: String): List<String>
 
 fun ScribuntoSession.getAllItemTitles(): List<String> = getPagesInCategory("Items", "Pets")
 
-
 fun ScribuntoSession.getExchangeData(itemName: String): WikiExchangeData {
     val (success, response) = request {
         +"loadExchangeData({\"$itemName\"}, true)"
@@ -82,21 +81,23 @@ fun ScribuntoSession.getExchangeData(itemName: String): WikiExchangeData {
 fun ScribuntoSession.getExchangeData(itemNames: List<String>): Map<String, WikiExchangeData> {
     val map = mutableMapOf<String, WikiExchangeData>()
     val chunkSize = 200
-    val max = itemNames.size
-    val job = GlobalScope.launch {
-        itemNames.chunked(chunkSize).forEach { chunk ->
-            launch {
+    val queue = TitleQueue(itemNames, chunkSize)
+    val main = GlobalScope.launch {
+        with (queue) {
+            process { list ->
                 val (success, response) = request {
-                    "data" `=` chunk.local()
+                    "data" `=` list.local()
                     +"loadExchangeData(data, true, true)"
                 }
-                println("Response = $response")
-                val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
-                map.putAll(data)
+                if (success) {
+                    val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
+                    map.putAll(data)
+                    emptyList()
+                } else list
             }
         }
     }
-    runBlocking { job.join() }
+    runBlocking { main.join() }
     return map
 }
 
@@ -116,105 +117,35 @@ fun ScribuntoSession.getItemDetails(itemName: String): List<ItemDetails> {
     return buildItemDetails(itemResult).second
 }
 
-@OptIn(DelicateCoroutinesApi::class)
 fun ScribuntoSession.getItemDetails(itemNames: List<String>): Map<String, List<ItemDetails>> {
     val map = mutableMapOf<String, MutableList<ItemDetails>>()
-    val failedTitles = mutableListOf<String>()
     val chunkSize = 100
-
-    val processTitles = ProcessTitles(ConcurrentLinkedDeque(itemNames), chunkSize) { list ->
-        val (success, response) = request {
-            "sessionData" `=` list
-            +"loadItemData(sessionData, true)"
-        }
-        if (!success) TitleProcessResult(emptyList(), list)
-        else {
-            val data = response.asJsonObject
-            for (title in list) {
-                val result = data.getAsJsonObject(title)
-                val details = buildItemDetails(result)
-                if (details.first.isNotEmpty() && details.second.isNotEmpty()) {
-                    val list = map.getOrPut(details.first) { mutableListOf() }
-                    list.addAll(details.second)
+    val queue = TitleQueue(itemNames, chunkSize)
+    val main = GlobalScope.launch {
+        with (queue) {
+            process { list ->
+                val (success, result) = request {
+                    "sessionData" `=` list
+                    +"loadItemData(sessionData, true)"
+                }
+                if (!success) list
+                else {
+                    val data = result.asJsonObject
+                    for (title in list) {
+                        val result = data.getAsJsonObject(title)
+                        val details = buildItemDetails(result)
+                        if (details.first.isNotEmpty() && details.second.isNotEmpty()) {
+                            val list = map.getOrPut(details.first) { mutableListOf() }
+                            list.addAll(details.second)
+                        }
+                    }
+                    emptyList()
                 }
             }
-            TitleProcessResult(list, emptyList())
         }
     }
-    var completed = false
-    GlobalScope.launch {
-        launch {
-            with (processTitles) {
-                process()
-            }
-        }.join()
-        completed = true
-    }
-
-    while (!completed) {
-        print("\r${"Completed titles: ${processTitles.completed.size}"}")
-        try {
-            Thread.sleep(100)
-        } catch (e: InterruptedException) {
-            e.printStackTrace()
-        }
-    }
-
-
+    runBlocking { main.join() }
     return map
-
-//    fun requestChunk(chunk: List<String>): Boolean {
-//        val (success, response) = request {
-//            "sessionData" `=` chunk
-//            +"loadItemData(sessionData, true)"
-//        }
-//        if (!success) return false
-//        val data = response.asJsonObject
-//        for (title in chunk) {
-//            val result = data.getAsJsonObject(title)
-//            val details = buildItemDetails(result)
-//            if (details.first.isNotEmpty() && details.second.isNotEmpty()) {
-//                val list = map.getOrPut(details.first) { mutableListOf() }
-//                list.addAll(details.second)
-//            }
-//        }
-//        return true
-//    }
-//
-//    runBlocking {
-//        GlobalScope.launch {
-//            val jobs = mutableListOf<Job>()
-//            itemNames.chunked(chunkSize).forEach { chunk ->
-//                jobs += launch {
-//                    println("Launching chunk ${chunk.first()} to ${chunk.last()}")
-//                    val success = requestChunk(chunk)
-//                    if (!success) {
-//                        val firstHalf = chunk.subList(0, chunk.size / 2)
-//                        val secondHalf = chunk.subList(chunk.size / 2, chunk.size)
-//                        val first = launch {
-//                            val success2 = requestChunk(firstHalf)
-//                            if (!success2) failedTitles.addAll(firstHalf)
-//                        }
-//                        val second = launch {
-//                            val success2 = requestChunk(secondHalf)
-//                            if (!success2) failedTitles.addAll(secondHalf)
-//                        }
-//                        first.join()
-//                        second.join()
-//                    }
-//                }
-//            }
-//            jobs.joinAll()
-//        }.join()
-//    }
-//    println("Failed titles: $failedTitles")
-//    println("Failed titles size: ${failedTitles.size}")
-//
-//    val failedMap = mutableMapOf<String, List<ItemDetails>>()
-//    if (failedTitles.isNotEmpty()) {
-//        failedMap.putAll(getItemDetails(failedTitles))
-//    }
-//    return map + failedMap
 }
 
 fun ScribuntoSession.getItemDetails(vararg itemNames: String): Map<String, List<ItemDetails>> =
@@ -228,6 +159,7 @@ fun ScribuntoSession.getAllItemDetails(): Map<String, List<ItemDetails>> {
 
 fun ScribuntoSession.getTitlesWithLocationData(): List<String> {
     val returnList = mutableListOf<String>()
+
     runChunks(500) { chunkSize, offset ->
         val (success, request) = request {
             +"loadTitlesWithLocationData($chunkSize, $offset, true)"
@@ -255,7 +187,6 @@ fun ScribuntoSession.getLocationJson(title: String): LocationDetails? {
 }
 
 fun ScribuntoSession.getLocationJson(): Map<String, List<LocationDetails>> {
-
     val results = mutableMapOf<String, MutableList<LocationDetails>>()
     runChunks(500) { chunkSize, offset ->
         val (success, response) = request {
@@ -292,62 +223,23 @@ fun ScribuntoSession.getLocationJson(): Map<String, List<LocationDetails>> {
     return results
 }
 
-data class ProcessTitles(
-    val titles: ConcurrentLinkedDeque<String>,
-    val chunkSize: Int,
-    val worker: suspend (List<String>) -> TitleProcessResult
-) {
-    val completed: ConcurrentLinkedDeque<String> = ConcurrentLinkedDeque()
-    private val pullMutex = Mutex()
-    private var iterations = 0
+//function loadTitlesWithLocationData(limit, offset, printResults)
+//    local results = mw.smw.ask {
+//        "[[Location JSON::+]]",
+//        "limit = " .. limit,
+//        "offset = " .. offset,
+//    }
+//    if (printResults) then
+//        printReturn(results)
+//    end
+//    return results
+//end
 
-    private suspend fun pullChunk(): List<String> {
-        val chunk = mutableListOf<String>()
-        pullMutex.withLock {
-            while (chunk.size < chunkSize) {
-                val title = titles.poll() ?: if (chunk.isEmpty()) return emptyList()
-                else return chunk
-                chunk.add(title)
-            }
-        }
-        return chunk
-    }
-
-    private suspend fun failTitles(titles: List<String>) {
-        pullMutex.withLock {
-            titles.forEach { this.titles.add(it) }
-        }
-    }
-
-    private suspend fun launchChunk() {
-        val chunk = pullChunk()
-        if (chunk.isEmpty()) return
-        val result = worker(chunk)
-        if (result.failed.isNotEmpty()) failTitles(result.failed)
-        if (result.successful.isNotEmpty()) completed.addAll(result.successful)
-    }
-
-    suspend fun CoroutineScope.process() {
-        launch {
-            val startedWith = titles.size
-            var completed = false
-            val jobs = mutableListOf<Job>()
-            while (!completed) {
-                val activeJobs = jobs.count { !it.isCancelled && !it.isCompleted }
-                print("\r${this@ProcessTitles.completed.size} titles processed...")
-                if (activeJobs < 10) {
-                    if (titles.isEmpty()) completed = true
-                    else jobs.add(launch { launchChunk() })
-                } else {
-                    delay(100)
-                }
-            }
-        }.join()
-    }
-
+fun ScribuntoSession.getQuestDetails() {
+    TODO()
 }
 
-data class TitleProcessResult(val successful: List<String>, val failed: List<String>)
+
 
 
 data class WikiExchangeData(
