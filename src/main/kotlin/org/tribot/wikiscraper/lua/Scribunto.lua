@@ -315,3 +315,7 @@ function loadLocationData(limit, offset, printResults)
     end
     return results
 end
+
+function loadQuestData(limit, offset, printRestuls)
+
+end

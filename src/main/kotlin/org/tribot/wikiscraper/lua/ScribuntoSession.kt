@@ -43,6 +43,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     @Throws(ScribuntoError::class)
     private fun processResponse(response: String): ScribuntoRequestResult {
         lastSessionCommunication = System.currentTimeMillis()
+        println("Response: $response")
         val responseJson = JsonParser.parseString(response.htmlUnescape()).asJsonObject
         val error = responseJson.has("error")
         if (error) {
@@ -101,7 +102,7 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
     fun request(resetSession: Boolean = false, block: LuaGlobalScope.() -> Unit): Pair<Boolean, JsonElement> =
         request(resetSession, lua(block))
 
-    fun request(resetSession: Boolean = false, code: String): Pair<Boolean, JsonElement> {
+    fun request(resetSession: Boolean = false, code: String, attempt: Int = 1): Pair<Boolean, JsonElement> {
         val parameters = mutableMapOf<String, String>()
         parameters["title"] = "Var"
 
@@ -115,7 +116,16 @@ class ScribuntoSession private constructor(private val wiki: OsrsWiki) {
         parameters["question"] = code
         val response = wiki.basicGet("scribunto-console", parameters)?.body?.string() ?: ""
         val result = processResponse(response)
-        return result.isError() to (result.print?.get("printReturn") ?: JsonNull.INSTANCE)
+        if (result.isError()) {
+            if (attempt > 3) result.throwIfError()
+            else {
+                println("Error in request, retrying...")
+//                reloadSession()
+                return request(true, code, attempt + 1)
+            }
+        }
+
+        return !result.isError() to (result.print?.get("printReturn") ?: JsonNull.INSTANCE)
     }
 
     private data class ScribuntoRequestResult(
@@ -222,18 +232,6 @@ fun main() {
     }
 
     val title = "Baby chinchompa"
-
-//
-
-    val (failedTitles, results) = session.getAllItemDetails()
-    println("Failed titles: ${failedTitles.size}")
-    println("Successful titles: ${results.size}")
-    println("Loading main lua")
-
-}
-
-
-
 //    session.getTemplatesOnPage(title)
 
 //    println(session.getPagesInCategory("Items", "Pets"))
@@ -254,6 +252,12 @@ fun main() {
 //        println(results)
 //
 //    println(results.size)
+//
+
+    val results = session.getAllItemDetails()
+//    val results = session.getAllItemDetails()
+    println(results.size)
+
 //    val results = session.getLocationJson("Zaros Zeitgeist")
 //    println(results)
 //
@@ -264,3 +268,13 @@ fun main() {
 ////
 //    println(results.entries.sumOf { it.value.size })
 //
+
+
+
+
+
+
+    println("Loading main lua")
+
+
+}
