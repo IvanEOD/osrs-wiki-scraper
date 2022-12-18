@@ -1,0 +1,56 @@
+{
+  "success": true,
+  "printReturn": [
+    {
+      "DPL time": 0.03292,
+      "Parse time": 0.0005,
+      "1": {
+        "title": "Abyssal whip",
+        "include": {
+          "Infobox Item": {
+            "examine": "A weapon from the Abyss.",
+            "exchange": "Yes",
+            "stackable": "No",
+            "release": "[[15 February]] [[2005]]",
+            "name": "Abyssal whip",
+            "placeholder": "Yes",
+            "equipable": "Yes",
+            "members": "Yes",
+            "id": "4151",
+            "tradeable": "Yes",
+            "options": "Wield",
+            "destroy": "Drop",
+            "quest": "No",
+            "value": "120001",
+            "weight": "0.453",
+            "image": "[[File:Abyssal whip.png]]",
+            "update": "Ghosts Ahoy and Slayer Update",
+            "noteable": "Yes"
+          },
+          "Infobox Bonuses": {
+            "str": "+82",
+            "dmagic": "0",
+            "prayer": "0",
+            "amagic": "0",
+            "arange": "0",
+            "astab": "0",
+            "acrush": "0",
+            "altimage": "[[File:Abyssal whip equipped female.png|150px]]",
+            "dcrush": "0",
+            "slot": "weapon",
+            "dstab": "0",
+            "drange": "0",
+            "mdmg": "0",
+            "combatstyle": "Whip",
+            "speed": "4",
+            "image": "[[File:Abyssal whip equipped.png|150px]]",
+            "dslash": "0",
+            "aslash": "+82",
+            "attackrange": "1",
+            "rstr": "0"
+          }
+        }
+      }
+    }
+  ]
+}

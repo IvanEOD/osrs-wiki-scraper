@@ -18,26 +18,19 @@ class TitleQueue(titles: Collection<String>, val chunkSize: Int = 100) {
             titlesChannel.consumeEach {
                 launch {
                     val failedTitles = processor(it)
-                    if (failedTitles.isNotEmpty()) {
-                        println()
-                        println("Failed titles: $failedTitles")
-                        titles.addAll(failedTitles)
-                    }
+                    if (failedTitles.isNotEmpty()) titles.addAll(failedTitles)
                 }
             }
         }
 
         launch {
             while (emptyIterations < 5) {
-                print("\r${titles.size} titles remaining...")
                 val chunk = titles.pollChunk(chunkSize)
                 if (chunk.isEmpty()) emptyIterations++
                 titlesChannel.send(chunk)
                 delay(20)
             }
             job.cancel()
-            println()
-            println("\rDone!")
         }
     }
 }

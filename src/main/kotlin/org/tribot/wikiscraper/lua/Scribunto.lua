@@ -115,19 +115,18 @@ function toJson(tbl)
     return mw.text.jsonEncode(tbl)
 end
 
-function printReturnError(message, value)
+function printReturn(value, error, message)
     local response = {}
-    response['success'] = false
-    response['message'] = message
+    response['success'] = error == nil or not error
+    if (error == true and message ~= nil) then
+        response['message'] = message
+    end
     response['printReturn'] = value
     print(toJson(response))
 end
 
-function printReturn(value)
-    local response = {}
-    response['success'] = true
-    response['printReturn'] = value
-    print(toJson(response))
+function isSessionLoaded()
+    printReturn(true)
 end
 
 function dplAsk(query, printResults)
@@ -146,6 +145,19 @@ function smwAsk(query, printResults)
     return results
 end
 
+function loadUnparsedContent(titles)
+    local results = {}
+    tableEach(titles, function(_, v)
+        local title = mw.title.new(v)
+        if (title ~= nil) then
+            local page = title:getContent()
+            if (page ~= nil) then
+                results[v] = page
+            end
+        end
+    end)
+end
+
 function parsePagesToList(dplResponse, filter, format)
     return tableMapToList(dplResponse, function(_, value, callback)
         local page = value
@@ -158,9 +170,6 @@ function parsePagesToList(dplResponse, filter, format)
     end)
 end
 
-function isSessionLoaded()
-    printReturn(true)
-end
 
 function loadExchangeData(items, ignoreErrors, printResults)
     local itemData = {}
@@ -171,7 +180,7 @@ function loadExchangeData(items, ignoreErrors, printResults)
 
         if (not noErr) then
             if (not ignoreErrors) then
-                printReturnError("Error loading exchange data for item " .. tostring(title), data)
+                printReturn(loadedData, true, "Error loading exchange data for item " .. tostring(title))
             end
         end
 
@@ -216,6 +225,7 @@ function loadItemData(items, printResults)
             title = item,
             include = "{Infobox Item}, {Infobox Bonuses}"
         })
+
         local exchangeData = loadExchangeData({item}, true)
 
         local data = {
@@ -314,8 +324,4 @@ function loadLocationData(limit, offset, printResults)
         printReturn(results)
     end
     return results
-end
-
-function loadQuestData(limit, offset, printRestuls)
-
 end

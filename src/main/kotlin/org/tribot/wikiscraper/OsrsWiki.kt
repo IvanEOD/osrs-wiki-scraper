@@ -5,7 +5,9 @@ import com.google.gson.JsonParser
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.tribot.wikiscraper.classes.ItemBuyLimits
+import org.tribot.wikiscraper.lua.LuaGlobalScope
 import org.tribot.wikiscraper.lua.ScribuntoSession
+import org.tribot.wikiscraper.lua.SessionManager
 import org.tribot.wikiscraper.query.WikiQuery
 import org.tribot.wikiscraper.utility.*
 import org.tribot.wikiscraper.utility.GSON
@@ -26,10 +28,20 @@ class OsrsWiki private constructor() {
     internal lateinit var namespaceManager: Namespace.Manager
         private set
 
+    private lateinit var sessionManager: SessionManager
+    lateinit var scribuntoSession: ScribuntoSession
+        private set
+
     internal fun newQuery(vararg templates: WikiQuery.Template): WikiQuery = WikiQuery(this, *templates)
 
-    fun scribuntu(init: ScribuntoSession.Builder.() -> Unit) = ScribuntoSession.build(this, init)
 
+    fun createScribuntoSession() = sessionManager.freshSession()
+    fun createScribuntoSession(block: ScribuntoSession.Builder.() -> Unit) = sessionManager.createSession(block)
+
+    fun scribunto(block: LuaGlobalScope.() -> Unit) = scribunto(false, block)
+    fun scribunto(code: String) = scribunto(false, code)
+    fun scribunto(refreshSession: Boolean, block: LuaGlobalScope.() -> Unit) = scribuntoSession.sendRequest(refreshSession, block)
+    fun scribunto(refreshSession: Boolean, code: String) = scribuntoSession.sendRequest(refreshSession, code)
     
     private fun refreshNamespaceManager() {
         namespaceManager = Namespace.Manager(newQuery(WikiQuery.Namespaces).next()!!
@@ -122,6 +134,9 @@ class OsrsWiki private constructor() {
         fun build(): OsrsWiki {
             client = Client(configuration)
             refreshNamespaceManager()
+
+            sessionManager = SessionManager(this@OsrsWiki)
+            scribuntoSession = createScribuntoSession()
             return this@OsrsWiki
         }
 

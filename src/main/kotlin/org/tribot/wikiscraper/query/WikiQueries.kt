@@ -1,34 +1,31 @@
 package org.tribot.wikiscraper.query
 
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
+import com.google.gson.*
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import org.tribot.wikiscraper.OsrsWiki
-import org.tribot.wikiscraper.classes.ItemBuyLimits
-import org.tribot.wikiscraper.classes.ItemDetails
-import org.tribot.wikiscraper.classes.QuestRequirement
-import org.tribot.wikiscraper.classes.WikiItemPrice
+import org.tribot.wikiscraper.classes.*
+import org.tribot.wikiscraper.lua.TitleQueue
 import org.tribot.wikiscraper.utility.*
-import java.net.URLEncoder
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar
+import java.util.Date
 
 
 /* Written by IvanEOD 12/9/2022, at 8:36 AM */
-
+object WikiModules {
+    const val GEPriceData = "Module:GEPrices/data"
+    const val GEVolumesData = "Module:GEVolumes/data"
+    const val LastPricesData = "Module:LastPrices/data"
+    const val QuestRequirementData = "Module:Questreq/data"
+}
 
 fun OsrsWiki.getQuestRequirements(): Map<String, List<QuestRequirement>> {
     val map = mutableMapOf<String, MutableList<QuestRequirement>>()
-    val request = scribuntoConsole(
-        "local questReqs = require('Module:Questreq/data')\n" +
-                "local stringValue = mw.text.jsonEncode(questReqs)\n" +
-                "print(stringValue)"
-    )
-    val json = JsonParser.parseString(request).asJsonObject
-    val print = json.get("print").asString.htmlUnescape()
-    val printJson = JsonParser.parseString(print).asJsonObject
-    val list = printJson.asMap()
+
+    val (_, result) = scribuntoSession.sendRequest {
+        "questReqs" `=` require(WikiModules.QuestRequirementData).local()
+        +"printReturn(questReqs)"
+    }
+    val list = result.asJsonObject.asMap()
 
     list.forEach { (key, value) ->
         val requirements = mutableListOf<QuestRequirement>()
@@ -99,6 +96,9 @@ fun OsrsWiki.getLastRevisionTimestamp(titles: Collection<String>): Map<String, S
                 } else value.asJsonObject.get("timestamp").asString
             }
         }
+
+
+
 fun OsrsWiki.getLastRevisionTimestamp(vararg titles: String) = getLastRevisionTimestamp(titles.toList())
 fun OsrsWiki.getPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
     val result = mutableMapOf<Int, String>()
@@ -130,143 +130,247 @@ fun OsrsWiki.getItemBuyLimits(): ItemBuyLimits = ItemBuyLimits.fetch()
 fun OsrsWiki.getUnalchableItemTitles(): List<String> = getTitlesInCategory("Items that cannot be alchemised")
 
 
-@OptIn(DelicateCoroutinesApi::class)
-fun OsrsWiki.getItemTemplates(): Map<String, ItemDetails> {
-    val properties = mutableMapOf(
-        "namespace" to "",
-        "uses" to "Template:Infobox Item",
-        "count" to 500,
-        "offset" to 0,
-        "include" to "{Infobox Item}, {Infobox Bonuses}",
-        "ignorecase" to true
-    )
-    val templates = mutableMapOf<String, Pair<JsonObject, JsonObject?>>()
-
-    println("Getting all item infoboxes...")
-    val start = System.currentTimeMillis()
-    runBlocking {
-        GlobalScope.launch {
-            (0..60).map { iteration ->
-                async {
-                    val props = properties.toMutableMap()
-                    props["offset"] = 500 * iteration
-                    val result = scribuntoAskRequest(props)
-                    if (result.isEmpty()) return@async emptyList<Pair<String, Pair<JsonObject, JsonObject?>>>()
-                    result.map {
-                        val title = it["title"].asString
-                        val infoboxItem = it["include"].asJsonObject["Infobox Item"].asJsonObject
-                        val infoboxBonuses = it["include"].asJsonObject["Infobox Bonuses"]
-
-                        if (infoboxBonuses != null) {
-                            when (infoboxBonuses) {
-                                is JsonArray -> {
-                                    val array = infoboxBonuses.asJsonArray
-                                    if (array.isEmpty) title to (infoboxItem to null)
-                                    else title to (infoboxItem to array[0].asJsonObject)
-                                }
-                                is JsonObject -> {
-                                    val obj = infoboxBonuses.asJsonObject
-                                    title to (infoboxItem to obj)
-                                }
-                                else -> title to (infoboxItem to null)
-                            }
-                        } else title to (infoboxItem to null)
-                    }
-                }
-            }.awaitAll().flatten().forEach { (title, pair) -> templates[title] = pair }
-
-        }.join()
+fun OsrsWiki.dplAsk(query: Map<String, Any>): JsonElement {
+    val (success, response) = scribuntoSession.sendRequest {
+        "query" `=` query.local()
+        +"dplAsk(query, true)"
     }
-    println("Got ${templates.size} item details in ${(System.currentTimeMillis() - start).toSecondsString()}.")
-    val buyLimits = getItemBuyLimits()
-    val unalchableItems = getUnalchableItemTitles()
-    val timestamps = getLastRevisionTimestamp(templates.keys)
+    return response
+}
 
-    val itemDetails: MutableMap<String, ItemDetails> = mutableMapOf()
-    templates.forEach { (title, template) ->
+fun OsrsWiki.smwAsk(query: List<String>): JsonElement {
+    val (success, response) = scribuntoSession.sendRequest {
+        "query" `=` query.local()
+        +"smwAsk(query, true)"
+    }
+    return response
+}
 
-        val itemTemplate = template.first.toVersionedMap()
-        val bonusesTemplate = template.second?.toVersionedMap()
-        val itemVersions = itemTemplate.getIndividualVersions()
-        val bonusesVersions = bonusesTemplate?.getIndividualVersions() ?: emptyList()
+fun OsrsWiki.getTemplatesOnPage(title: String): List<String> {
+    val (success, response) = scribuntoSession.sendRequest {
+        +"getTemplatesOnPage(\"$title\", true)"
+    }
+    return responseToArray(response).map { it.asString }
+}
 
-        for (i in 0..itemVersions.size) {
-            val itemData = itemVersions.getOrNull(i)?.toMutableMap() ?: continue
-            val bonusesData = bonusesVersions.getOrNull(i) ?: bonusesVersions.firstOrNull() ?: emptyMap()
-            itemData["alchable"] = if (title !in unalchableItems) "yes" else "no"
-            itemData["lastupdate"] = timestamps[title] ?: ""
-            itemData["buylimit"] = buyLimits[title]?.toString() ?: ""
-            itemDetails[title] = ItemDetails.fromMap(itemData, bonusesData)
+fun OsrsWiki.getTitlesInCategory(vararg categories: String): List<String> {
+    val list = mutableListOf<String>()
+    val chunkSize = 10000
+    for (category in categories) {
+        var offset = 0
+        while (true) {
+            val (success, response) = scribuntoSession.sendRequest {
+                +"getPagesInCategory(\"$category\", $chunkSize, $offset, true)"
+            }
+            val titles = responseToArray(response)
+            titles.forEach { list.add(it.asString) }
+            if (titles.size() < chunkSize) break
+            else offset += chunkSize
         }
     }
-    println("Built ${templates.keys.size} templates in ${(System.currentTimeMillis() - start).toSecondsString()}.")
-    return itemDetails
+    return list.filter { title -> title !in categories && ignorePrefixes.none { title.startsWith(it) } }.distinct()
 }
 
-//fun OsrsWiki.getItemTemplates(vararg titles: String): Map<String, ItemDetails> {
-//
-//}
+fun OsrsWiki.getAllItemTitles(): List<String> = getTitlesInCategory("Items", "Pets")
 
-
-
-private fun OsrsWiki.getCategoryMembers(categories: Collection<String>, vararg namespaces: OsrsWiki.Namespace): List<String> {
-    val result = mutableListOf<String>()
-    for (category in categories) {
-        val query = newQuery(WikiQuery.CategoryMembers)
-        query["cmtitle"] = namespaceManager.convertIfNotInNamespace(category, OsrsWiki.Namespace.Category)
-        if (namespaces.isNotEmpty()) query["cmnamespace"] = namespaceManager.createFilter(*namespaces)
-        while (query.isNotEmpty())
-            result.addAll(query.next()!!
-                .listComprehension("categorymembers")
-                .map { it.asJsonObject.getString("title") })
+fun OsrsWiki.getExchangeData(itemName: String): WikiExchangeData {
+    val (success, response) = scribuntoSession.sendRequest {
+        +"loadExchangeData({\"$itemName\"}, true)"
     }
-    return result.distinct()
+    return GSON.fromJson(response, WikiExchangeData::class.java)
 }
 
-fun OsrsWiki.getTitlesInCategory(categories: Collection<String>): List<String> =
-    getCategoryMembers(categories).filter {
-        !it.startsWith("Category:") && !it.startsWith("File:") && it !in categories
+@OptIn(DelicateCoroutinesApi::class)
+fun OsrsWiki.getExchangeData(itemNames: List<String>): Map<String, WikiExchangeData> {
+    val map = mutableMapOf<String, WikiExchangeData>()
+    val chunkSize = 200
+    val queue = TitleQueue(itemNames, chunkSize)
+    val main = GlobalScope.launch {
+        with (queue) {
+            process { list ->
+                val (success, response) = scribuntoSession.sendRequest {
+                    "data" `=` list.local()
+                    +"loadExchangeData(data, true, true)"
+                }
+                if (success) {
+                    val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
+                    map.putAll(data)
+                    emptyList()
+                } else list
+            }
+        }
     }
-
-fun OsrsWiki.getTitlesInCategory(vararg categories: String) = getTitlesInCategory(categories.toList())
-
-fun OsrsWiki.scribuntoConsole(code: String): String = client.newCall(
-    "https://oldschool.runescape.wiki/api.php?action=scribunto-console&format=json&title=Var&question=${
-        URLEncoder.encode(code, "UTF-8")
-    }"
-).body?.string() ?: ""
-
-
-//    namespace = '',
-//    uses = 'Template:Infobox Item',
-//    count = 1,
-//    offset = 1,
-//    include = '{Infobox Item}',
-//    ignorecase = true
-
-// mapOf(
-//    "namespace" to "",
-//    "uses" to "Template:Infobox Item",
-//    "count" to 1,
-//    "offset" to 1,
-//    "include" to "{Infobox Item}",
-//    "ignorecase" to true
-// )
-//https://oldschool.runescape.wiki/w/Module:DPLlua
-
-fun OsrsWiki.scribuntoAskRequest(properties: Map<String, Any>): List<JsonObject> {
-    val propertiesString =
-        properties.entries.joinToString(",\n") { "${it.key} = ${if (it.value is String) "'${it.value}'" else it.value}" }
-    val script =
-        "local dpl = require( 'Module:DPLlua' )\nlocal a = dpl.ask({\n$propertiesString\n})\nprint(mw.text.jsonEncode(a))"
-    val requestPrint = JsonParser.parseString(scribuntoConsole(script).htmlUnescape())
-        .asJsonObject.getString("print").htmlUnescape()
-    if (requestPrint.isEmpty()) return emptyList()
-    val jsonObject = JsonParser.parseString(requestPrint)?.asJsonObject ?: return emptyList()
-    jsonObject.remove("DPL time")
-    jsonObject.remove("Parse time")
-    return jsonObject.toJsonObjectsList()
+    runBlocking { main.join() }
+    return map
 }
+
+fun OsrsWiki.getExchangeData(vararg itemNames: String): Map<String, WikiExchangeData> =
+    getExchangeData(itemNames.toList())
+
+fun OsrsWiki.getAllExchangeData(): Map<String, WikiExchangeData> {
+    val titles = getAllItemTitles()
+    return getExchangeData(titles)
+}
+
+fun OsrsWiki.getItemDetails(itemName: String): List<ItemDetails> {
+    val (success, result) = scribuntoSession.sendRequest {
+        +"loadItemData({\"$itemName\"}, true)"
+    }
+    val itemResult = result.asJsonObject[itemName]
+    return ItemDetails.fromJsonElement(itemResult).second
+}
+
+@OptIn(DelicateCoroutinesApi::class)
+fun OsrsWiki.getItemDetails(itemNames: List<String>): Map<String, List<ItemDetails>> {
+    val map = mutableMapOf<String, MutableList<ItemDetails>>()
+    val chunkSize = 100
+    val queue = TitleQueue(itemNames, chunkSize)
+    val main = GlobalScope.launch {
+        with (queue) {
+            process { list ->
+                val (success, result) = scribuntoSession.sendRequest {
+                    "sessionData" `=` list
+                    +"loadItemData(sessionData, true)"
+                }
+                if (!success) list
+                else {
+                    if (result.isJsonArray) {
+                        val array = result.asJsonArray
+                        if (array.isEmpty) emptyList()
+                        else throw IllegalStateException("Unhandled JsonArray Response from Scribunto: $result")
+                    } else {
+                        val data = result.asJsonObject
+                        for (title in list) {
+                            val titleResult = data.getAsJsonObject(title)
+                            val details = ItemDetails.fromJsonElement(titleResult)
+                            if (details.first.isNotEmpty() && details.second.isNotEmpty()) {
+                                val titleList = map.getOrPut(details.first) { mutableListOf() }
+                                titleList.addAll(details.second)
+                            }
+                        }
+                        emptyList()
+                    }
+                }
+            }
+        }
+    }
+    runBlocking { main.join() }
+    return map
+}
+
+fun OsrsWiki.getItemDetails(vararg itemNames: String): Map<String, List<ItemDetails>> =
+    getItemDetails(itemNames.toList())
+
+
+
+fun OsrsWiki.getAllItemDetails(): Map<String, List<ItemDetails>> {
+    val titles = getAllItemTitles()
+    return getItemDetails(titles)
+}
+
+fun OsrsWiki.getAllRevisionsSince(date: Date, categories: Collection<String>): Map<String, Date> {
+    val map = mutableMapOf<String, Date>()
+    dplAsk(mapOf(
+        "category" to
+    ))
+
+}
+
+fun OsrsWiki.getTitlesWithLocationData(): List<String> {
+    val returnList = mutableListOf<String>()
+    runChunks(500) { chunkSize, offset ->
+        val (success, request) = scribuntoSession.sendRequest {
+            +"loadTitlesWithLocationData($chunkSize, $offset, true)"
+        }
+        val array = request.asJsonArray.map { cleanLocationName(it.asJsonArray[0].asString) }
+        val returnSize = array.size
+        returnList.addAll(array)
+        returnList.distinct()
+        returnSize
+    }
+    return returnList
+}
+
+fun OsrsWiki.getLocationJson(title: String): LocationDetails? {
+    val (success, request) = scribuntoSession.sendRequest {
+        +"loadLocationDataByTitle(\"$title\", true)"
+    }
+    val obj = if (request.isJsonArray) {
+        val array = request.asJsonArray
+        if (array.isEmpty) return null
+        else array[0].asJsonObject
+    } else request.asJsonObject
+    val locationJson = JsonParser.parseString(obj["Location JSON"].asString)
+    return LocationDetails.fromJsonElement(locationJson)
+}
+
+fun OsrsWiki.getLocationJson(): Map<String, List<LocationDetails>> {
+    val results = mutableMapOf<String, MutableList<LocationDetails>>()
+    runChunks(500) { chunkSize, offset ->
+        val (success, response) = scribuntoSession.sendRequest {
+            +"loadLocationData($chunkSize, $offset, true)"
+        }
+        val responseArray = responseToArray(response)
+        val responseSize = responseArray.size()
+        fun addLocation(name: String, location: LocationDetails) {
+            val list = results.getOrPut(name) { mutableListOf() }
+            list.add(location)
+        }
+
+        responseArray.forEach { element ->
+            val name = runCatching {
+                element.asJsonObject["1"].asString
+            }.onFailure {
+                println("Failed to get name for (${element.javaClass.simpleName}) $element")
+            }.getOrDefault("Unknown Name")
+            val cleanedName = cleanLocationName(name)
+            val json = element.asJsonObject["Location JSON"]
+            if (json.isJsonArray) {
+                val array = json.asJsonArray
+                array.forEach {
+                    val details = LocationDetails.fromJsonElement(JsonParser.parseString(it.asString))
+                    addLocation(cleanedName, details)
+                }
+            } else {
+                val details = LocationDetails.fromJsonElement(JsonParser.parseString(json.asString))
+                addLocation(cleanedName, details)
+            }
+        }
+        responseSize
+    }
+    return results
+}
+
+
+fun runChunks(chunkSize: Int, worker: (Int, Int) -> Int) {
+    var offset = 0
+    while (true) {
+        val processedAmount = worker(chunkSize, offset)
+        offset += processedAmount
+        if (processedAmount < chunkSize) break
+    }
+}
+
+
+private fun cleanLocationName(name: String): String {
+    return name.replace("[[", "").replace("]]", "")
+        .split("|").last()
+}
+
+private fun responseToArray(response: JsonElement): JsonArray {
+    if (response is JsonArray) return response
+    val responseObject = response.asJsonObject
+    responseObject.remove("DPL time")
+    responseObject.remove("Parse time")
+    val array = JsonArray()
+    responseObject.entrySet().forEach {
+        array.add(it.value)
+    }
+    return array
+}
+
+private val WikiStringExchangeDataMapType = object : TypeToken<Map<String, WikiExchangeData>>() {}.type
+private val ignorePrefixes = listOf("Template:", "Module:", "Category:", ":Category:", "File:")
 
 
 private fun OsrsWiki.parseContinuousToSingle(

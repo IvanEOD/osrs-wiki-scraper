@@ -39,6 +39,7 @@ interface LocalScope {
     fun Map<*, *>.local() = LocalModifier.new(this)
     fun Iterable<*>.local() = LocalModifier.new(this)
     fun LuaTableBuilder.local() = LocalModifier.new(this)
+    fun ModuleRequire.local() = LocalModifier.new(this)
 
 }
 
@@ -65,7 +66,11 @@ interface LuaGlobalScope: LuaScope, LocalScope {
     override val scope: LuaGlobalScope
         get() = this
 
-    infix fun <T: Any> String.`=`(value: LocalModifier<T>): LuaScope = privateSet(this, value.value, true)
+    infix fun <T: Any> String.`=`(value: LocalModifier<T>): LuaScope = if (value.value is ModuleRequire)
+            privateSet(this, value.value.toLuaValue(), true, true)
+        else privateSet(this, value.value, true)
+
+    infix fun String.`=`(value: ModuleRequire): LuaScope = privateSet(this, value.toLuaValue(), isRawString = true)
 
     operator fun File.unaryPlus(): LuaGlobalScope {
         if (!exists()) throw IllegalArgumentException("File $this does not exist")
@@ -74,21 +79,14 @@ interface LuaGlobalScope: LuaScope, LocalScope {
         return this@LuaGlobalScope
     }
 
-    fun require(module: String): LuaGlobalScope {
-        if (module.isEmpty()) return this
+    fun require(module: String): ModuleRequire {
         var name = module
-        if (name.startsWith("Module:")) name = name.substring(7).ifEmpty { return this }
-        name = name.replaceFirstChar { it.lowercase() }.split(" ").joinToString { "" }
-        return require(name, module)
+        if (!name.startsWith("Module:")) {
+            name = "Module:$name"
+            name = name.replaceFirstChar { it.lowercase() }.split(" ").joinToString { "" }
+        }
+        return ModuleRequire(name)
     }
-
-    fun require(variableName: String, module: String): LuaGlobalScope {
-        val moduleName = if (module.startsWith("Module:")) module else "Module:$module"
-        //
-
-        return this
-    }
-
 
 }
 
@@ -97,6 +95,10 @@ class LocalModifier<T: Any> private constructor(val value: T) {
     companion object {
         internal fun <T: Any> new(value: T) = LocalModifier(value)
     }
+}
+
+data class ModuleRequire(val moduleName: String) {
+    fun toLuaValue() = "require(\"$moduleName\")"
 }
 
 sealed interface LuaTableScope: LuaScope {
@@ -151,10 +153,10 @@ private class LuaTableScopeImpl: LuaTableScope {
     override fun toLua(): String = toLuaValueString(map)
 }
 
-private inline fun <reified K: Any, reified S: LuaScope> S.privateSet(key: K, value: Any, local: Boolean = false): S {
+private inline fun <reified K: Any, reified S: LuaScope> S.privateSet(key: K, value: Any, local: Boolean = false, isRawString: Boolean = false): S {
     return when (this) {
         is LuaScopeImpl -> {
-            code.append("${if (local) "local " else ""}$key = ${toLuaValueString(value)}\n")
+            code.append("${if (local) "local " else ""}$key = ${if (isRawString) value else toLuaValueString(value)}\n")
             this
         }
         

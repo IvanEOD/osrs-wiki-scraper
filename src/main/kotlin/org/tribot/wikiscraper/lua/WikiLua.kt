@@ -11,6 +11,7 @@ sealed class ScribuntoError(message: String): Throwable(message) {
 class ScribuntoRequestError(sessionId: Int, message: String): ScribuntoError("Scribunto request error: (Session: $sessionId): $message")
 class ScribuntoLuaError(sessionId: Int, message: String): ScribuntoError("Scribunto Lua error (Session: $sessionId): $message")
 class ScribuntoGeneralError(sessionId: Int, message: String): ScribuntoError("Scribunto error (Session: $sessionId): $message")
+class ScribuntoSessionError(sessionId: Int, message: String): ScribuntoError("Scribunto session error (Session: $sessionId): $message")
 class ScribuntoSessionSizeTooLarge(sessionId: Int): ScribuntoError("Scribunto Error (Session: $sessionId): Session size is too large")
 class ScribuntoUnknownError(sessionId: Int): ScribuntoError("Scribunto Error (Session: $sessionId): Unknown cause")
 

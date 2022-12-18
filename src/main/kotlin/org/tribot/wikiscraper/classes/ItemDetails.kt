@@ -1,7 +1,8 @@
 package org.tribot.wikiscraper.classes
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonNull
 import com.google.gson.JsonParser
-import org.tribot.wikiscraper.lua.WikiExchangeData
 import org.tribot.wikiscraper.utility.*
 import java.util.*
 
@@ -29,7 +30,6 @@ data class ItemDetails(
     val value: Int,
     val weight: Double,
     val canSellOnExchange: Boolean,
-    val buyLimit: Int,
     val release: Date,
     val update: String,
     val removal: Date?,
@@ -69,7 +69,6 @@ data class ItemDetails(
         if (alchable) prefixPrint("    Low alch value: $lowAlchValue")
         prefixPrint("    Weight: $weight")
         prefixPrint("    Can sell on exchange: $canSellOnExchange")
-        prefixPrint("    Buy limit: $buyLimit")
         prefixPrint("    Release: ${release.toWikiAlternateFormat()}")
         prefixPrint("    Update: $update")
         if (removal != null) prefixPrint("    Removal: ${removal.toWikiAlternateFormat()}")
@@ -92,6 +91,41 @@ data class ItemDetails(
             "no", "n", "false", "f", "0" -> false
             else -> startsWith("yes", true)
         }
+
+        fun fromJsonElement(jsonElement: JsonElement): Pair<String, List<ItemDetails>> {
+            println("Item Details: $jsonElement")
+            val list = mutableListOf<ItemDetails>()
+            val resultObject = jsonElement.asJsonObject
+            val infoObject = resultObject["info"]
+            val info = if (infoObject.isJsonObject) resultObject["info"].asJsonObject else return "" to emptyList()
+            val bonusResult = resultObject["bonuses"]
+            val bonuses = if (bonusResult != null) {
+                if (bonusResult.isJsonArray) {
+                    val array = bonusResult.asJsonArray
+                    if (array.isEmpty) JsonNull.INSTANCE
+                    else array[0].asJsonObject
+                } else if (bonusResult.isJsonObject) bonusResult.asJsonObject
+                else JsonNull.INSTANCE
+            } else JsonNull.INSTANCE
+            val title = resultObject["title"].asString
+            val infoboxVersions = info.toVersionedMap()
+            val bonusesVersions = if (!bonuses.isJsonNull) bonuses.asJsonObject.toVersionedMap() else null
+            val exchangeInfoJson =
+                resultObject["exchangeData"]?.let { if (it.isJsonObject) it.asJsonObject else JsonNull.INSTANCE }
+                    ?: JsonNull.INSTANCE
+            val exchangeData = if (exchangeInfoJson.isJsonNull) "" else exchangeInfoJson.toString()
+            val versionCount = infoboxVersions.versions
+            for (i in 0 until versionCount) {
+                val infobox = infoboxVersions.getVersion(i + 1).toMutableMap()
+                if ((infobox["exchange"]?.boolean() ?: infobox["tradeable"]?.boolean()) == true) infobox["exchangeInfo"] =
+                    exchangeData
+                val bonus = bonusesVersions?.getVersion(i + 1) ?: emptyMap()
+                val details = ItemDetails.fromMap(infobox, bonus)
+                list.add(details)
+            }
+            return title to list
+        }
+
 
         fun fromMap(infoMap: Map<String, String>, bonusesMap: Map<String, String> = emptyMap()): ItemDetails {
             val equipment = if (bonusesMap.isNotEmpty()) EquipmentItemInfo.fromMap(bonusesMap) else null
@@ -123,12 +157,11 @@ data class ItemDetails(
             val value = infoMap["value"]?.toIntOrNull() ?: 0
             val weight = infoMap["weight"]?.toDoubleOrNull() ?: 0.0
             val canSellOnExchange = infoMap["exchange"]?.boolean() ?: tradeable
-            val buyLimit = infoMap["buylimit"]?.toIntOrNull() ?: 0
             val release = infoMap["release"]?.getDateNonNullable() ?: DefaultDate
             val update = infoMap["update"] ?: ""
             val removal = infoMap["removal"]?.getDateNullable()
             val removalUpdate = infoMap["removalupdate"] ?: ""
-            val lastUpdate = infoMap["lastupdate"]?.getDateNonNullable() ?: DefaultDate
+            val lastUpdate = infoMap["lastupdate"]?.getDateNullable() ?: release
             val exchangeInfoString = infoMap["exchangeInfo"] ?: ""
 
             val exchangeInfo = if (exchangeInfoString.isNotEmpty()) {
@@ -142,7 +175,7 @@ data class ItemDetails(
                 aka, members, alchable, equippable, tradeable,
                 stackable, stacksInBank, placeholder, quest,
                 destroy, options, wornOptions, edible,
-                examine, value, weight, canSellOnExchange, buyLimit,
+                examine, value, weight, canSellOnExchange,
                 release, update, removal, removalUpdate, lastUpdate,
                 equipment, exchangeInfo, isHistoric, isBeta
             )

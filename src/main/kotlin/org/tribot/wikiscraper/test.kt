@@ -1,6 +1,6 @@
 package org.tribot.wikiscraper
 
-import org.tribot.wikiscraper.query.getItemTemplates
+import org.tribot.wikiscraper.query.getQuestRequirements
 
 
 /* Written by IvanEOD 12/9/2022, at 9:03 AM */
@@ -9,6 +9,8 @@ fun main() {
 
     val wiki = OsrsWiki.builder().build()
 
+    val results = wiki.getQuestRequirements()
+    println(results)
 
 
 //    val itemTemplates = wiki.getItemTemplates()

@@ -11,3 +11,6 @@
 // Page with DPL
 //https://oldschool.runescape.wiki/w/Module:PageListTools
 
+
+// SMW
+//https://github.com/SemanticMediaWiki/SemanticScribunto/

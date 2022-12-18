@@ -37,6 +37,7 @@ class VersionedMap(val versions: Int, internal val properties: List<TemplateProp
         if (versions == 1) return combined
         if (version > versions) {
             println("Version $version does not exist, returning version 1")
+            debug("")
             return emptyMap()
 //            throw IllegalArgumentException("Version $version does not exist, max version is $versions")
         }
