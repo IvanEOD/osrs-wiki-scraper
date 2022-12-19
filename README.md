@@ -8,6 +8,7 @@
 #### Create an OsrsWiki instance:
 </summary>
 
+---
 ```kotlin
    val wiki = OsrsWiki.builder()
                  .withCookieManager( CookieManager() )
@@ -19,27 +20,32 @@
 
  - Optionally set a custom cookie manager.
    - `.withCookieManager( CookieManager() )`
+
+
  - Optionally set a custom proxy.
    - `.withProxy( Proxy() )`
+
+
  - Optionally set a custom user agent.
    - `.withUserAgent( "Custom User Agent" )`
+
+
  - Optionally set the default number of Scribunto sessions used for bulk Scribunto requests.
    - `.withScribuntoSessionCount( 10 )`
-
-
-</details>
-
 ---
+</details>
 
 <details><summary><h5>Using the OsrsWiki instance:</h5></summary>
 
+---
    - Get a page title by Item ID:
-     - ```wiki.getPageTitleFromId( 995 )``` &#10145; "Coins"
+     - ```wiki.getPageTitleFromId( 995 )``` &#10145; `"Coins"`
+
 
    - Get page titles from Item IDs:
      - ```wiki.getPageTitlesFromIds(11832, 11834, 11836)``` &#10145; `["Bandos chestplate", "Bandos tassets", "Bandos boots"]`
-      
-
+     
+---
 </details>
 
 

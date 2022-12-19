@@ -6,6 +6,10 @@ import com.google.gson.*
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import scripts.wikiscraper.OsrsWiki
+import scripts.wikiscraper.classes.ItemBuyLimits
+import scripts.wikiscraper.classes.QuestRequirement
+import scripts.wikiscraper.classes.WikiItemPrice
+import scripts.wikiscraper.utility.isSkillName
 import java.text.SimpleDateFormat
 import java.util.Date
 
