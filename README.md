@@ -1,34 +1,37 @@
 # Osrs Wiki Scraper
-Osrs Wiki Scraper
 
-<details><summary>
+>___
+## OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
+>---
+><details><summary>
+>
+>#### Create an OsrsWiki instance:
+></summary>
+>
+>```kotlin
+>   val wiki = OsrsWiki.builder()
+>                 .withCookieManager( CookieManager() )
+>                 .withProxy( Proxy() )                
+>                 .withUserAgent( "Custom User Agent" )    
+>                 .withScribuntoSessionCount(10)    
+>                 .build() 
+>```
+>
+> - Optionally set a custom cookie manager.
+>   - `.withCookieManager( CookieManager() )`
+> - Optionally set a custom proxy.
+>   - `.withProxy( Proxy() )`
+> - Optionally set a custom user agent.
+>   - `.withUserAgent( "Custom User Agent" )`
+> - Optionally set the default number of Scribunto sessions used for bulk Scribunto requests.
+>   - `.withScribuntoSessionCount( 10 )`
 
-### OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
 
-</summary>
+</details>
 
+---
 
-### Create an OsrsWiki instance:
-```kotlin
-val wiki = OsrsWiki.builder()
-    .withCookieManager( CookieManager() )
-    .withProxy( Proxy() )                
-    .withUserAgent( "Custom User Agent" )    
-    .withScribuntoSessionCount(10)    
-    .build() 
-```
-
- - Optionally set a custom cookie manager.
-   - `.withCookieManager( CookieManager() )`
- - Optionally set a custom proxy.
-   - `.withProxy( Proxy() )`
- - Optionally set a custom user agent.
-   - `.withUserAgent( "Custom User Agent" )`
- - Optionally set the default number of Scribunto sessions used for bulk Scribunto requests.
-   - `.withScribuntoSessionCount( 10 )`
-   
-
-   <details><summary><h5>Using the OsrsWiki instance:</h5></summary>
+<details><summary><h5>Using the OsrsWiki instance:</h5></summary>
 
    - Get a page title by Item ID:
      - ```wiki.getPageTitleFromId( 995 )``` &#10145; "Coins"
@@ -37,18 +40,18 @@ val wiki = OsrsWiki.builder()
      - ```wiki.getPageTitlesFromIds(11832, 11834, 11836)``` &#10145; `["Bandos chestplate", "Bandos tassets", "Bandos boots"]`
       
 
-        </details>
-
 </details>
+
+
+
+## ScribuntoSession.kt ([ScribuntoSession.kt][ScribuntoSession.kt Link])
 
 <details><summary>
 
-### ScribuntoSession.kt ([ScribuntoSession.kt][ScribuntoSession.kt Link])
-
+#### Creating a Scribunto Session:
 </summary>
    <p>
    
-   ### Creating a Scribunto Session:
    ```kotlin
    val session = wiki.createScribuntoSession {
        withoutDefaultCode()                
