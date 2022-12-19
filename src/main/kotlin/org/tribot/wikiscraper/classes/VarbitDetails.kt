@@ -10,8 +10,6 @@ data class VarbitDetails(
     val classType: ClassType,
     val description: String
 ) {
-
-
     enum class VarbitType {
         Varbit,
         VarPlayer

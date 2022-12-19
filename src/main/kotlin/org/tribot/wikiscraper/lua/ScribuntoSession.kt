@@ -112,9 +112,6 @@ class ScribuntoSession internal constructor(private val wiki: OsrsWiki, sessionM
         return !result.isError() to (result.print?.get("printReturn") ?: JsonNull.INSTANCE)
     }
 
-    private fun JsonElement.isSuccessResponse(): Boolean = if (isJsonNull) false
-    else runCatching { asBoolean }.getOrDefault(false)
-
     private fun load() {
         val (success, result) = sendRequest(true, code)
         if (!success) throw ScribuntoSessionError(id, "Failed to load session")

@@ -16,5 +16,6 @@ data class WikiItemPrice(private val map: Map<String, Long>) {
     }
 
     data class WikiResponse(val data: Map<Int, Map<String, Long>>)
+
 }
 

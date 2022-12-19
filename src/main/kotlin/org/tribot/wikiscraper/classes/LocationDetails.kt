@@ -3,12 +3,6 @@ package org.tribot.wikiscraper.classes
 import com.google.gson.JsonElement
 import org.tribot.wikiscraper.utility.GSON
 
-data class Coordinates(
-    val x: Int,
-    val y: Int,
-    val plane: Int
-)
-
 data class LocationDetails(
     val locationType: String,
     val mapId: Int,
@@ -40,5 +34,11 @@ data class LocationDetails(
             return LocationDetails(locationType, mapId, geometryType, locationCoordinatesList)
         }
     }
+
+    data class Coordinates(
+        val x: Int,
+        val y: Int,
+        val plane: Int
+    )
 
 }

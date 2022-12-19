@@ -14,29 +14,3 @@ class ScribuntoGeneralError(sessionId: Int, message: String): ScribuntoError("Sc
 class ScribuntoSessionError(sessionId: Int, message: String): ScribuntoError("Scribunto session error (Session: $sessionId): $message")
 class ScribuntoSessionSizeTooLarge(sessionId: Int): ScribuntoError("Scribunto Error (Session: $sessionId): Session size is too large")
 class ScribuntoUnknownError(sessionId: Int): ScribuntoError("Scribunto Error (Session: $sessionId): Unknown cause")
-
-
-
-fun test() = runBlocking {
-    val start = System.currentTimeMillis()
-    val jobs = mutableListOf<Job>()
-    for (i in 0..10) {
-        jobs += launch {
-            delay(200)
-            println("Elapsed: ${System.currentTimeMillis() - start}")
-        }
-    }
-    jobs.joinAll()
-}
-
-
-
-
-fun main() {
-
-    test()
-
-
-
-
-}
