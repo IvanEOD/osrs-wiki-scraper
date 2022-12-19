@@ -23,9 +23,9 @@ val wiki = OsrsWiki.builder()
 #### Using the OsrsWiki instance:
 
  - Get a page title by Item ID:
-    - ```wiki.getPageTitleFromId( 995 )``` &#10145; ```"Coins"```
+    - ```wiki.getPageTitleFromId( 995 )``` &#10145; "Coins"
  - Get page titles from Item IDs:
-    - ```wiki.getPageTitlesFromIds(11832, 11834, 11836)``` &#10145; ```["Dragon pickaxe", "Dragon pickaxe (or)", "Dragon pickaxe (g)"]```
+    - ```wiki.getPageTitlesFromIds(11832, 11834, 11836)``` &#10145; `["Bandos chestplate", "Bandos tassets", "Bandos boots"]`
 
 ```kotlin
     wiki.getPageTitleFromId(995)                   // "Coins"
