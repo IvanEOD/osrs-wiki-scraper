@@ -2,14 +2,15 @@
 Osrs Wiki Scraper
 
 <details><summary>OsrsWiki.kt</summary>
-<p>
+
 
 ### Create an OsrsWiki instance:
 ```kotlin
 val wiki = OsrsWiki.builder()
-    .withCookieManager(customCookieManager)
-    .withProxy(customProxy)                
-    .withUserAgent(customUserAgent)        
+    .withCookieManager( CookieManager() )
+    .withProxy( Proxy() )                
+    .withUserAgent( "Custom User Agent" )    
+    .withScribuntoSessionCount(10)    
     .build() 
 ```
 
@@ -19,21 +20,27 @@ val wiki = OsrsWiki.builder()
    - ```.withProxy( Proxy() )```
  - Optionally set a custom user agent.
    - ```.withUserAgent( "Custom User Agent" )```
+   - Optionally set the default number of Scribunto sessions used for bulk Scribunto requests.
+     - ```.withScribuntoSessionCount( 10 )```
+   
 
-#### Using the OsrsWiki instance:
+   <details>
+   <summary>
+      <h4>Using the OsrsWiki instance:</h4>
+   </summary>
 
- - Get a page title by Item ID:
-    - ```wiki.getPageTitleFromId( 995 )``` &#10145; "Coins"
- - Get page titles from Item IDs:
-    - ```wiki.getPageTitlesFromIds(11832, 11834, 11836)``` &#10145; `["Bandos chestplate", "Bandos tassets", "Bandos boots"]`
+   - Get a page title by Item ID:
+     - ```wiki.getPageTitleFromId( 995 )``` &#10145; "Coins"
+     - ```kotlin
+       wiki.getPageTitleFromId(995)
+       ```
 
-```kotlin
-    wiki.getPageTitleFromId(995)                   // "Coins"
-    wiki.getPageTitlesFromIds(11832, 11834, 11836) // [ "Bandos chestplate", "Bandos tassets", "Bandos boots" ]
-    wiki.getTitlesInCategory("")
-```
+        - Get page titles from Item IDs:
+        - ```wiki.getPageTitlesFromIds(11832, 11834, 11836)``` &#10145; `["Bandos chestplate", "Bandos tassets", "Bandos boots"]`
+      
 
-</p>
+        </details>
+
 </details>
 
 <details><summary>ScribuntoSession.kt</summary>
