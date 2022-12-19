@@ -1,30 +1,30 @@
 # Osrs Wiki Scraper
 
->___
-## OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
->---
-><details><summary>
->
->#### Create an OsrsWiki instance:
-></summary>
->
->```kotlin
->   val wiki = OsrsWiki.builder()
->                 .withCookieManager( CookieManager() )
->                 .withProxy( Proxy() )                
->                 .withUserAgent( "Custom User Agent" )    
->                 .withScribuntoSessionCount(10)    
->                 .build() 
->```
->
-> - Optionally set a custom cookie manager.
->   - `.withCookieManager( CookieManager() )`
-> - Optionally set a custom proxy.
->   - `.withProxy( Proxy() )`
-> - Optionally set a custom user agent.
->   - `.withUserAgent( "Custom User Agent" )`
-> - Optionally set the default number of Scribunto sessions used for bulk Scribunto requests.
->   - `.withScribuntoSessionCount( 10 )`
+
+### OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
+
+<details><summary>
+
+#### Create an OsrsWiki instance:
+</summary>
+
+```kotlin
+   val wiki = OsrsWiki.builder()
+                 .withCookieManager( CookieManager() )
+                 .withProxy( Proxy() )                
+                 .withUserAgent( "Custom User Agent" )    
+                 .withScribuntoSessionCount(10)    
+                 .build() 
+```
+
+ - Optionally set a custom cookie manager.
+   - `.withCookieManager( CookieManager() )`
+ - Optionally set a custom proxy.
+   - `.withProxy( Proxy() )`
+ - Optionally set a custom user agent.
+   - `.withUserAgent( "Custom User Agent" )`
+ - Optionally set the default number of Scribunto sessions used for bulk Scribunto requests.
+   - `.withScribuntoSessionCount( 10 )`
 
 
 </details>
@@ -44,7 +44,7 @@
 
 
 
-## ScribuntoSession.kt ([ScribuntoSession.kt][ScribuntoSession.kt Link])
+### ScribuntoSession.kt ([ScribuntoSession.kt][ScribuntoSession.kt Link])
 
 <details><summary>
 
