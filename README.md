@@ -28,7 +28,7 @@ val wiki = OsrsWiki.builder()
    - `.withScribuntoSessionCount( 10 )`
    
 
-   <details><summary><h4>Using the OsrsWiki instance:</h4></summary>
+   <details><summary><h6>**Using the OsrsWiki instance:**</h6></summary>
 
    - Get a page title by Item ID:
      - ```wiki.getPageTitleFromId( 995 )``` &#10145; "Coins"
