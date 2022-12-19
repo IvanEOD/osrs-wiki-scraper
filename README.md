@@ -3,7 +3,7 @@ Osrs Wiki Scraper
 
 <details><summary>
 
-[OsrsWiki][OsrsWiki.kt Link]
+### OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
 
 </summary>
 
@@ -41,7 +41,11 @@ val wiki = OsrsWiki.builder()
 
 </details>
 
-<details><summary>ScribuntoSession.kt</summary>
+<details><summary>
+
+### ScribuntoSession.kt ([ScribuntoSession.kt][ScribuntoSession.kt Link])
+
+</summary>
    <p>
    
    ### Creating a Scribunto Session:
