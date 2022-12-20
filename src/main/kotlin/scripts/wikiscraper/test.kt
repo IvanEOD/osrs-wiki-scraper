@@ -31,6 +31,10 @@ fun main() {
 
     }
 
+
+
+
+
 //    val itemTemplates = wiki.getItemTemplates()
 //
 //    itemTemplates.forEach { (title, template) ->

@@ -2,19 +2,18 @@
 
 package scripts.wikiscraper.query
 
-import com.google.gson.*
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import scripts.wikiscraper.OsrsWiki
 import scripts.wikiscraper.classes.*
 import scripts.wikiscraper.lua.TitleQueue
 import scripts.wikiscraper.utility.*
-import scripts.wikiscraper.utility.GSON
-import scripts.wikiscraper.utility.GroupQueue
-import scripts.wikiscraper.utility.getString
-import scripts.wikiscraper.utility.pipeFence
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 
 
 /* Written by IvanEOD 12/9/2022, at 8:36 AM */
@@ -23,9 +22,18 @@ object WikiModules {
     const val GEVolumesData = "Module:GEVolumes/data"
     const val LastPricesData = "Module:LastPrices/data"
     const val QuestRequirementData = "Module:Questreq/data"
+    const val SlayerTaskLibrary = "Module:Slayer_task_library"
+    const val SlayerMasterTables = "Module:SlayerConsts/MasterTables"
+    const val SlayerConstants = "Module:SlayerConsts"
 }
 
+object WikiQueryDefaults {
+    val slayerMasters =
+        listOf("Turael", "Krystilia", "Mazchna", "Vannaka", "Chaeldar", "Konar", "Nieve", "Steve", "Duradel")
 
+
+
+}
 
 
 fun OsrsWiki.getQuestRequirements(): Map<String, List<QuestRequirement>> {
@@ -47,7 +55,7 @@ fun OsrsWiki.getQuestRequirements(): Map<String, List<QuestRequirement>> {
             requirements.add(QuestRequirement.Quest(it.asString))
         }
 
-        skills.forEach skillLoop@ {
+        skills.forEach skillLoop@{
             println("    Skill: $it")
             val skill = it.asJsonArray
             if (skill.isEmpty) return@skillLoop
@@ -128,10 +136,12 @@ fun OsrsWiki.getItemPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
     val map = ids.associateWith { "item" }
     return getTitleFromIds(map).map { (key, value) -> key.first to value }.toMap()
 }
+
 fun OsrsWiki.getNpcPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
     val map = ids.associateWith { "npc" }
     return getTitleFromIds(map).map { (key, value) -> key.first to value }.toMap()
 }
+
 fun OsrsWiki.getObjectPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
     val map = ids.associateWith { "object" }
     return getTitleFromIds(map).map { (key, value) -> key.first to value }.toMap()
@@ -149,8 +159,20 @@ fun OsrsWiki.getItemPrice(id: Int): WikiItemPrice? {
     val result = GSON.fromJson(response, WikiItemPrice.WikiResponse::class.java)
     return WikiItemPrice(result.data[id]!!)
 }
+
 fun OsrsWiki.getItemBuyLimits(): ItemBuyLimits = ItemBuyLimits.fetch()
 fun OsrsWiki.getUnalchableItemTitles(): List<String> = getTitlesInCategory("Items that cannot be alchemised")
+
+fun OsrsWiki.getSlayerMonstersAndIds(): Map<String, Int> {
+    val (success, response) = scribunto {
+        "slayerConsts" `=` require(WikiModules.SlayerConstants).local()
+        "slayerConsts".`return`("monsterIdToName")
+    }
+
+}
+
+
+fun OsrsWiki.getSlayerMasterData(name: String)
 
 
 fun OsrsWiki.dplAsk(query: Map<String, Any>): JsonElement {
@@ -182,12 +204,14 @@ fun OsrsWiki.getAllTitlesUsingTemplate(vararg templates: String): List<String> {
         else it
     }
     val returnList = runChunks(500) {
-        val response = dplAsk(mapOf(
-            "namespace" to "",
-            "uses" to cleanedTemplates.pipeFence(),
-            "count" to chunkSize,
-            "offset" to offset
-        ))
+        val response = dplAsk(
+            mapOf(
+                "namespace" to "",
+                "uses" to cleanedTemplates.pipeFence(),
+                "count" to chunkSize,
+                "offset" to offset
+            )
+        )
         val results = responseToArray(response)
         results.size() to results.map { it.asString }
     }
@@ -200,13 +224,15 @@ fun OsrsWiki.getTitlesInCategory(vararg categories: String): List<String> {
         else it
     }
     val returnList = runChunks(500) {
-        val response = dplAsk(mapOf(
-            "namespace" to "",
-            "category" to cleanedCategories.pipeFence(),
-            "count" to chunkSize,
-            "offset" to offset,
-            "ignorecase" to true,
-        ))
+        val response = dplAsk(
+            mapOf(
+                "namespace" to "",
+                "category" to cleanedCategories.pipeFence(),
+                "count" to chunkSize,
+                "offset" to offset,
+                "ignorecase" to true,
+            )
+        )
         val results = responseToArray(response)
         results.size() to results.map { it.asString }.filter { it !in cleanedCategories }
     }
@@ -227,7 +253,7 @@ fun OsrsWiki.getExchangeData(itemNames: List<String>): Map<String, WikiExchangeD
     val chunkSize = 200
     val queue = TitleQueue(itemNames, chunkSize)
     val main = GlobalScope.launch {
-        with (queue) {
+        with(queue) {
             execute { list ->
                 val (success, response) = bulkScribunto {
                     "data" `=` list.local()
@@ -266,7 +292,7 @@ fun OsrsWiki.loadAllItemData(itemNames: List<String>): Map<String, List<JsonObje
     val chunkSize = 100
     val queue = TitleQueue(itemNames, chunkSize)
     val main = GlobalScope.launch {
-        with (queue) {
+        with(queue) {
             execute { list ->
                 val (success, result) = bulkScribunto {
                     "sessionData" `=` list
@@ -367,10 +393,12 @@ fun OsrsWiki.getAllNpcTitles(): List<String> = getAllTitlesUsingTemplate("Infobo
 
 
 fun OsrsWiki.getAllTitlesWithRevisionsSince(date: Date, categories: Collection<String>): List<String> {
-    val results = dplAsk(mapOf(
-        "category" to categories.pipeFence(),
-        "allrevisionssince" to SimpleDateFormat("yyyy-MM-dd").format(date)
-    ))
+    val results = dplAsk(
+        mapOf(
+            "category" to categories.pipeFence(),
+            "allrevisionssince" to SimpleDateFormat("yyyy-MM-dd").format(date)
+        )
+    )
     return responseToArray(results).map { it.asString }
 }
 
@@ -457,14 +485,14 @@ inline fun <reified T> runChunks(chunkSize: Int, crossinline worker: ChunkScope<
     var shouldContinue = true
     val offsets = mutableSetOf<Int>()
     val scopes = mutableListOf<ChunkScope<T>>()
-    val job = GlobalScope.launch mainJob@ {
+    val job = GlobalScope.launch mainJob@{
         val jobs = mutableListOf<Job>()
         while (shouldContinue) {
             if (offset !in offsets && jobs.count { !it.isCompleted && !it.isCancelled } < 10) {
                 offsets += offset
                 val scope = ChunkScope<T>(chunkSize, offset)
                 scopes += scope
-                jobs += launch jobLoop@ {
+                jobs += launch jobLoop@{
                     val (processedAmount, results) = scope.worker()
                     scope.result = results
                     scope.returnSize = processedAmount
@@ -512,8 +540,10 @@ private fun OsrsWiki.parseContinuousToSingle(
     templateKey: String? = null
 ) = if (templateKey == null) parsePropertiesToSingle(getContinuous(titles, template, properties, key))
 else parsePropertiesToSingle(getContinuous(titles, template, properties, key), templateKey)
+
 private fun parsePropertiesToSingle(map: Map<String, List<JsonObject?>>, key: String): Map<String, List<String>> =
     map.mapValues { (_, value) -> value.mapNotNull { it?.getString(key) } }
+
 private fun parsePropertiesToSingle(map: Map<String, List<JsonObject?>>) = parsePropertiesToSingle(map, "title")
 private fun parsePropertiesToDouble(
     map: Map<String, List<JsonObject?>>,

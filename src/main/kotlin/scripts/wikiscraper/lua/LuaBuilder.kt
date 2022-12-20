@@ -29,6 +29,11 @@ private fun toLuaValueString(value: Any): String = when (value) {
 @DslMarker
 annotation class LocalScopeMarker
 
+
+interface CustomLuaValue {
+    fun toLuaString(): String
+}
+
 @LocalScopeMarker
 interface LocalScope {
 
@@ -54,6 +59,8 @@ sealed interface LuaScope {
     infix fun String.`=`(value: Map<*, *>) : LuaScope = privateSet(this, value)
     infix fun String.`=`(value: Iterable<*>) : LuaScope = privateSet(this, value)
     infix fun String.`=`(value: LuaTableScope.() -> Unit): LuaScope = privateSet(this, value)
+
+    infix fun String.call(vararg: )
 
     operator fun String.unaryPlus(): LuaScope
 
@@ -99,6 +106,10 @@ class LocalModifier<T: Any> private constructor(val value: T) {
 
 data class ModuleRequire(val moduleName: String) {
     fun toLuaValue() = "require(\"$moduleName\")"
+}
+
+data class ValueReference(val name: String) {
+    fun toLuaValue() =
 }
 
 sealed interface LuaTableScope: LuaScope {
