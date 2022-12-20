@@ -63,7 +63,7 @@ internal class SessionManager internal constructor(private val wiki: OsrsWiki) {
             """.trimIndent()
 
         internal fun loadMainLua(): String {
-            return File("src/main/kotlin/org/tribot/wikiscraper/lua/Scribunto.lua").readText()
+            return File("src/main/kotlin/scripts/wikiscraper/lua/Scribunto.lua").readText()
         }
     }
 

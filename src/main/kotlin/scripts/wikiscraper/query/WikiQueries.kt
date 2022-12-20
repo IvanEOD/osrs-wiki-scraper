@@ -6,10 +6,13 @@ import com.google.gson.*
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import scripts.wikiscraper.OsrsWiki
-import scripts.wikiscraper.classes.ItemBuyLimits
-import scripts.wikiscraper.classes.QuestRequirement
-import scripts.wikiscraper.classes.WikiItemPrice
-import scripts.wikiscraper.utility.isSkillName
+import scripts.wikiscraper.classes.*
+import scripts.wikiscraper.lua.TitleQueue
+import scripts.wikiscraper.utility.*
+import scripts.wikiscraper.utility.GSON
+import scripts.wikiscraper.utility.GroupQueue
+import scripts.wikiscraper.utility.getString
+import scripts.wikiscraper.utility.pipeFence
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -104,26 +107,39 @@ fun OsrsWiki.getLastRevisionTimestamp(titles: Collection<String>): Map<String, S
             }
         }
 
+private fun OsrsWiki.getTitleFromIds(map: Map<Int, String>): Map<Pair<Int, String>, String> {
+    val result = mutableMapOf<Pair<Int, String>, String>()
 
-
-fun OsrsWiki.getLastRevisionTimestamp(vararg titles: String) = getLastRevisionTimestamp(titles.toList())
-fun OsrsWiki.getPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
-    val result = mutableMapOf<Int, String>()
-    for (id in ids) {
-        val response = client.newCall("https://oldschool.runescape.wiki/w/Special:Lookup?type=item&id=$id")
+    for ((id, type) in map) {
+        val response = client.newCall("https://oldschool.runescape.wiki/w/Special:Lookup?type=$type&id=$id")
         val url = response.networkResponse?.request?.url?.toString() ?: ""
         if (url.isEmpty()) {
             println("Failed to get page title for id $id")
             continue
         }
         val title = url.substringAfter("https://oldschool.runescape.wiki/w/").replace('_', ' ')
-        result[id] = title
+        result[id to type] = title
     }
     return result
 }
 
-fun OsrsWiki.getPageTitlesFromIds(vararg ids: Int) = getPageTitlesFromIds(ids.toList())
-fun OsrsWiki.getPageTitleFromId(id: Int): String = getPageTitlesFromIds(listOf(id)).let { return it[id] ?: "" }
+fun OsrsWiki.getLastRevisionTimestamp(vararg titles: String) = getLastRevisionTimestamp(titles.toList())
+fun OsrsWiki.getItemPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
+    val map = ids.associateWith { "item" }
+    return getTitleFromIds(map).map { (key, value) -> key.first to value }.toMap()
+}
+fun OsrsWiki.getNpcPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
+    val map = ids.associateWith { "npc" }
+    return getTitleFromIds(map).map { (key, value) -> key.first to value }.toMap()
+}
+fun OsrsWiki.getObjectPageTitlesFromIds(ids: Collection<Int>): Map<Int, String> {
+    val map = ids.associateWith { "object" }
+    return getTitleFromIds(map).map { (key, value) -> key.first to value }.toMap()
+}
+
+fun OsrsWiki.getItemPageTitlesFromIds(vararg ids: Int) = getItemPageTitlesFromIds(ids.toList())
+fun OsrsWiki.getNpcPageTitlesFromIds(vararg ids: Int) = getNpcPageTitlesFromIds(ids.toList())
+fun OsrsWiki.getObjectPageTitlesFromIds(vararg ids: Int) = getObjectPageTitlesFromIds(ids.toList())
 fun OsrsWiki.getItemPrice(id: Int): WikiItemPrice? {
     val response = client.newCall(WikiItemPrice.ItemPriceUrl, mapOf("id" to "$id")).body?.string() ?: ""
     if (response.isEmpty()) {
@@ -267,11 +283,6 @@ fun OsrsWiki.loadAllItemData(itemNames: List<String>): Map<String, List<JsonObje
                         for (title in list) {
                             val titleResult = data.getAsJsonObject(title)
                             map.getOrPut(title) { mutableListOf() }.add(titleResult)
-//                            val details = ItemDetails.fromJsonElement(titleResult)
-//                            if (details.first.isNotEmpty() && details.second.isNotEmpty()) {
-//                                val titleList = map.getOrPut(details.first) { mutableListOf() }
-//                                titleList.addAll(details.second)
-//                            }
                         }
                         emptyList()
                     }
@@ -291,10 +302,8 @@ fun OsrsWiki.loadAllItemData(): Map<String, List<JsonObject>> {
     return loadAllItemData(titles)
 }
 
-
-fun OsrsWiki.getAllItemDetails(): Map<String, List<ItemDetails>> {
-    val titles = getAllItemTitles()
-    val itemData = loadAllItemData(titles)
+fun OsrsWiki.getItemDetails(itemNames: List<String>): Map<String, List<ItemDetails>> {
+    val itemData = loadAllItemData(itemNames)
     val map = mutableMapOf<String, MutableList<ItemDetails>>()
     for ((title, data) in itemData) {
         data.forEach {
@@ -304,6 +313,58 @@ fun OsrsWiki.getAllItemDetails(): Map<String, List<ItemDetails>> {
     }
     return map
 }
+
+fun OsrsWiki.getAllItemDetails(): Map<String, List<ItemDetails>> {
+    val titles = getAllItemTitles()
+    return getItemDetails(titles)
+}
+
+fun OsrsWiki.getNpcDetails(vararg npcName: String): Map<String, List<NpcDetails>> {
+    val titles = npcName.toList()
+    val (success, result) = bulkScribunto {
+        "data" `=` titles.local()
+        +"loadNpcData(data, true)"
+    }
+    if (!success) return emptyMap()
+    val map = mutableMapOf<String, MutableList<NpcDetails>>()
+    val data = result.asJsonObject
+    for (title in titles) {
+        val titleResult = data.getAsJsonObject(title)
+        val details = NpcDetails.fromJsonObject(titleResult)
+        details.forEach { (title, list) ->
+            map.getOrPut(title) { mutableListOf() }.addAll(list)
+        }
+    }
+    return map
+}
+
+fun OsrsWiki.getMonsterDetails(vararg monsterName: String): Map<String, List<MonsterDetails>> {
+    val titles = monsterName.toList()
+    val (success, result) = bulkScribunto {
+        "data" `=` titles.local()
+        +"loadMonsterData(data, true)"
+    }
+    if (!success) return emptyMap()
+    val map = mutableMapOf<String, MutableList<MonsterDetails>>()
+    val data = result.asJsonObject
+    println("Data")
+    println(data)
+    for (title in titles) {
+        val titleResult = data.getAsJsonObject(title)
+        println("Title Result: $titleResult")
+        val resultsMap = MonsterDetails.fromJsonObject(titleResult)
+        println("Results Map: $resultsMap")
+        resultsMap.forEach { (name, list) ->
+            if (name.isNotEmpty() && list.isNotEmpty())
+                map.getOrPut(name) { mutableListOf() }.addAll(list)
+        }
+    }
+    return map
+}
+
+fun OsrsWiki.getAllMonsterTitles(): List<String> = getAllTitlesUsingTemplate("Infobox Monster")
+fun OsrsWiki.getAllNpcTitles(): List<String> = getAllTitlesUsingTemplate("Infobox NPC")
+
 
 fun OsrsWiki.getAllTitlesWithRevisionsSince(date: Date, categories: Collection<String>): List<String> {
     val results = dplAsk(mapOf(

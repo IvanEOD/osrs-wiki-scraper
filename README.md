@@ -38,13 +38,34 @@
 <details><summary><h5>Using the OsrsWiki instance:</h5></summary>
 
 ---
-   - Get a page title by Item ID:
-     - ```wiki.getPageTitleFromId( 995 )``` &#10145; `"Coins"`
-
-
+   
    - Get page titles from Item IDs:
-     - ```wiki.getPageTitlesFromIds(11832, 11834, 11836)``` &#10145; `["Bandos chestplate", "Bandos tassets", "Bandos boots"]`
-     
+     - ```wiki.getItemPageTitlesFromIds(11832, 11834, 11836)``` &#10145; `["Bandos chestplate", "Bandos tassets", "Bandos boots"]`
+
+
+   - Get page titles from NPC IDs:
+     - ```wiki.getNpcPageTitlesFromIds(1399, 2639)``` &#10145; `["King Roald", "Robert The Strong"]`
+
+
+   - Get all Item titles:
+     - ```wiki.getAllItemTitles()``` &#10145; `["Abyssal whip", "Abyssal bludgeon", "Abyssal dagger", ...]`
+
+   
+   - Get all NPC titles:
+     - ```wiki.getAllNpcTitles()``` &#10145; `["Abyssal demon", "Abyssal leech", "Abyssal lurker", ...]`
+
+
+   - Get [ItemDetails][ItemDetails.kt Link] by Item Name:
+     - ```wiki.getItemDetails("Bandos chestplate", "Bandos tassets", "Bandos boots")``` &#10145; `Map<String, List<ItemDetails>>`
+
+
+   - Get [NpcDetails][NpcDetails.kt Link] by NPC Name:
+     - ```wiki.getNpcDetails("King Roald", "Robert The Strong")``` &#10145; `Map<String, List<NpcDetails>>`
+
+
+   - Get [QuestRequirement][QuestRequirement.kt Link]'s for all quests:
+     - ```wiki.getQuestRequirements()``` &#10145; `Map<String, List<QuestRequirement>>`
+
 ---
 </details>
 
@@ -123,3 +144,6 @@ a
 [VarbitDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/VarbitDetails.kt
 [WikiExchangeData.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiExchangeData.kt
 [WikiItemPrice.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiItemPrice.kt
+
+[NpcDetails.kt Link]: TODO()
+

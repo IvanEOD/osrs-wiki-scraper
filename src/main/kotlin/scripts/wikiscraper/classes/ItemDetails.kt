@@ -3,7 +3,8 @@ package scripts.wikiscraper.classes
 import com.google.gson.JsonNull
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import org.tribot.wikiscraper.utility.*
+import scripts.wikiscraper.utility.*
+import scripts.wikiscraper.utility.toVersionedMap
 import java.util.*
 
 
@@ -80,10 +81,6 @@ data class ItemDetails(
         exchangeInfo?.debug("$prefix    ")
     }
 
-
-
-
-
     companion object {
 
         internal fun String.boolean(): Boolean = when (this.lowercase()) {
@@ -118,7 +115,7 @@ data class ItemDetails(
                 if ((infobox["exchange"]?.boolean() ?: infobox["tradeable"]?.boolean()) == true) infobox["exchangeInfo"] =
                     exchangeData
                 val bonus = bonusesVersions?.getVersion(i + 1) ?: emptyMap()
-                val details = ItemDetails.fromMap(infobox, bonus)
+                val details = fromMap(infobox, bonus)
                 list.add(details)
             }
             return title to list

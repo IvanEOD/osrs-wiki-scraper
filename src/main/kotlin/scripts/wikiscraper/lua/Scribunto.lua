@@ -326,8 +326,37 @@ function loadLocationData(limit, offset, printResults)
     return results
 end
 
-function buildInfoboxItem(tbl)
+function loadMonsterData(names, printResults)
+    local results = {}
+    for _, name in pairs(names) do
+        local result = dpl.ask {
+            title = name,
+            include = "{Infobox Monster}"
+        }
+        if (result ~= nil and result[1] ~= nil) then
+            results[name] = result[1]["include"]["Infobox Monster"]
+        end
+    end
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
+end
 
-
+function loadNpcData(titles, printResults)
+    local results = {}
+    for _, title in pairs(titles) do
+        local result = dpl.ask {
+            title = title,
+            include = "{Infobox NPC}"
+        }
+        if (result ~= nil and result[1] ~= nil) then
+            results[title] = result[1]["include"]["Infobox NPC"]
+        end
+    end
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
 end
 
