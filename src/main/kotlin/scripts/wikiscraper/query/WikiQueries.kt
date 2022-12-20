@@ -165,8 +165,8 @@ fun OsrsWiki.getUnalchableItemTitles(): List<String> = getTitlesInCategory("Item
 
 fun OsrsWiki.getSlayerMonstersAndIds(): Map<String, Int> {
     val (success, response) = scribunto {
-        "slayerConsts" `=` require(WikiModules.SlayerConstants).local()
-        "slayerConsts".`return`("monsterIdToName")
+        "slayerConsts".local() `=` require(WikiModules.SlayerConstants)
+        "slayerConsts:"("monsterIdToName")
     }
 
 }

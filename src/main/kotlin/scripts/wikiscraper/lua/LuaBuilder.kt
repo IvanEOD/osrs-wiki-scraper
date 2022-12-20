@@ -12,8 +12,9 @@ annotation class LuaMarker
 typealias LuaTableBuilder = LuaTableScope.() -> Unit
 
 private val LuaDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-private fun toLuaKeyString(key: Any): String = "[${toLuaValueString(key)}]"
+private fun toLuaKeyString(key: Any): String = if (key is CustomLuaValue) key.toLuaString() else "[${toLuaValueString(key)}]"
 private fun toLuaValueString(value: Any): String = when (value) {
+    is CustomLuaValue -> value.toLuaString()
     is String -> "\"$value\""
     is Date -> "\"${LuaDateFormat.format(value)}\""
     is Boolean,
@@ -22,7 +23,6 @@ private fun toLuaValueString(value: Any): String = when (value) {
             (k, v) -> "${toLuaKeyString(k!!)}=${toLuaValueString(v!!)}"
     }
     is List<*> -> value.joinToString(",", "{", "}") { toLuaValueString(it!!) }
-    is LocalModifier<*> -> toLuaValueString(value.value)
     else -> throw IllegalArgumentException("Cannot convert $value to Lua")
 }
 
@@ -30,21 +30,14 @@ private fun toLuaValueString(value: Any): String = when (value) {
 annotation class LocalScopeMarker
 
 
-interface CustomLuaValue {
+fun interface CustomLuaValue {
     fun toLuaString(): String
 }
 
 @LocalScopeMarker
 interface LocalScope {
 
-    fun String.local() = LocalModifier.new(this)
-    fun Date.local() = LocalModifier.new(this)
-    fun Boolean.local() = LocalModifier.new(this)
-    fun Number.local() = LocalModifier.new(this)
-    fun Map<*, *>.local() = LocalModifier.new(this)
-    fun Iterable<*>.local() = LocalModifier.new(this)
-    fun LuaTableBuilder.local() = LocalModifier.new(this)
-    fun ModuleRequire.local() = LocalModifier.new(this)
+    fun String.local() = "local $this"
 
 }
 
@@ -58,9 +51,16 @@ sealed interface LuaScope {
     infix fun String.`=`(value: String) : LuaScope = privateSet(this, value)
     infix fun String.`=`(value: Map<*, *>) : LuaScope = privateSet(this, value)
     infix fun String.`=`(value: Iterable<*>) : LuaScope = privateSet(this, value)
+    infix fun String.`=`(value: CustomLuaValue) : LuaScope = privateSet(this, value)
     infix fun String.`=`(value: LuaTableScope.() -> Unit): LuaScope = privateSet(this, value)
 
-    infix fun String.call(vararg: )
+    fun ref(value: String): CustomLuaValue = CustomLuaValue { value }
+    fun String.ref() = ref(this)
+    operator fun String.invoke(vararg arguments: Any) = privateSet("", CustomLuaValue { "$this(${arguments.joinToString(",") { toLuaValueString(it) }})" })
+    fun String.invokeMethod(methodName: String, vararg arguments: Any) = "$this:$methodName".invoke(*arguments)
+    fun String.call(vararg arguments: Any) = "$this.".invoke(*arguments)
+    fun String.callMethod(methodName: String, vararg arguments: Any) = "$this.$methodName".invoke(*arguments)
+
 
     operator fun String.unaryPlus(): LuaScope
 
@@ -73,12 +73,6 @@ interface LuaGlobalScope: LuaScope, LocalScope {
     override val scope: LuaGlobalScope
         get() = this
 
-    infix fun <T: Any> String.`=`(value: LocalModifier<T>): LuaScope = if (value.value is ModuleRequire)
-            privateSet(this, value.value.toLuaValue(), true, true)
-        else privateSet(this, value.value, true)
-
-    infix fun String.`=`(value: ModuleRequire): LuaScope = privateSet(this, value.toLuaValue(), isRawString = true)
-
     operator fun File.unaryPlus(): LuaGlobalScope {
         if (!exists()) throw IllegalArgumentException("File $this does not exist")
         val code = readText()
@@ -86,30 +80,15 @@ interface LuaGlobalScope: LuaScope, LocalScope {
         return this@LuaGlobalScope
     }
 
-    fun require(module: String): ModuleRequire {
+    fun require(module: String): CustomLuaValue {
         var name = module
         if (!name.startsWith("Module:")) {
             name = "Module:$name"
             name = name.replaceFirstChar { it.lowercase() }.split(" ").joinToString { "" }
         }
-        return ModuleRequire(name)
+        return CustomLuaValue { "require(\"$name\")" }
     }
 
-}
-
-
-class LocalModifier<T: Any> private constructor(val value: T) {
-    companion object {
-        internal fun <T: Any> new(value: T) = LocalModifier(value)
-    }
-}
-
-data class ModuleRequire(val moduleName: String) {
-    fun toLuaValue() = "require(\"$moduleName\")"
-}
-
-data class ValueReference(val name: String) {
-    fun toLuaValue() =
 }
 
 sealed interface LuaTableScope: LuaScope {
@@ -164,10 +143,19 @@ private class LuaTableScopeImpl: LuaTableScope {
     override fun toLua(): String = toLuaValueString(map)
 }
 
-private inline fun <reified K: Any, reified S: LuaScope> S.privateSet(key: K, value: Any, local: Boolean = false, isRawString: Boolean = false): S {
+private fun privateKeyString(key: Any): String = when (key) {
+    is String -> if (key.isEmpty()) "" else "$key = "
+    else -> "$key = "
+}
+
+private inline fun <reified K: Any, reified S: LuaScope> S.privateSet(key: K, value: Any): S {
+    val luaKey = privateKeyString(key)
+
+
     return when (this) {
         is LuaScopeImpl -> {
-            code.append("${if (local) "local " else ""}$key = ${if (isRawString) value else toLuaValueString(value)}\n")
+            if (K::class != String::class) throw IllegalArgumentException("Key must be a String in a global scope")
+            code.append("$luaKey${toLuaValueString(value)}\n")
             this
         }
         
