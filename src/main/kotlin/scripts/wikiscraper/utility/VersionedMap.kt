@@ -47,6 +47,9 @@ class VersionedMap(val versions: Int, internal val properties: List<TemplateProp
 
     fun getIndividualVersions(): List<Map<String, String>> = (1..versions).map { getVersion(it) }
 
+    fun getPropertyData(key: String): TemplatePropertyData? = properties.firstOrNull { it.name == key }
+        ?: properties.firstOrNull { it.key == key }
+
     operator fun get(key: String, version: Int = 0): String {
         val finalVersion = if (version > versions) 1 else version
         val properties = this.properties.filter { it.name == key }
@@ -80,10 +83,6 @@ data class TemplatePropertyData(
     var files = mutableListOf<String>()
     private val pageReferencesList = mutableListOf<String>()
     val pageReferences: List<String> get() = pageReferencesList.distinct()
-//    val pageReferences get() = if (pageReferencesList.isEmpty()) {
-//        parsePageReferences()
-//        pageReferencesList
-//    } else pageReferencesList
 
     internal val cleanValue: String get() = if (isImage) "https://oldschool.runescape.wiki/images/${images[0].replace(' ', '_').urlEncode()}"
 //        else if (isDate) WikiAlternateDateFormatter.format(WikiDoubleBracketDateFormatter.parse(value))
@@ -106,11 +105,14 @@ data class TemplatePropertyData(
     }
 
     internal fun debugValueString(): String {
-        return if (isImage) "(Image) ${images[0].replace(' ', '_').urlEncode()}"
+        var returnString = if (isImage) "(Image) ${images[0].replace(' ', '_').urlEncode()}"
         else if (isFile) "(File) ${files[0]}"
         else if (isPageReference) "(Page) ${pageReferences[0]}"
         else if (isDate) WikiAlternateDateFormatter.format(WikiDoubleBracketDateFormatter.parse(value))
         else value
+
+        if (hasPageReference) returnString += " (Embedded Page References: ${pageReferences.joinToString(",")})"
+        return returnString
     }
 
     private fun parsePageReferences() {
@@ -142,7 +144,7 @@ data class TemplatePropertyData(
             }
 
             var other = trimmed
-            (images + files).forEach { other = other.replace(it.second, "").replace("File:", "") }
+            (images + files).forEach { other = other.replace(it.first, "").replace("File:", "") }
             if (other.trim().isEmpty()) continue
             remaining = other
             returnList.add(other)

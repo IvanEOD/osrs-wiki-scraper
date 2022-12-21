@@ -6,10 +6,14 @@
     <a href="https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/README.md">
     </a>
     <h1 align="center">OSRS Wiki Scraper</h1>
-    <p align="center">
+
+---
+<p align="center">
       An OSRS Wiki scraper in Kotlin designed to easily scrape data <b><u>YOU</u></b> want from the OSRS Wiki.
     </p>
 </div>
+
+---
 
 <details>
     <summary>Table of Contents</summary>
@@ -67,7 +71,9 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
+## OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
+
+###### The OsrsWiki class is the main class of the project. It provides methods to scrape data from the OSRS Wiki.
 
 <details><summary>
 
@@ -114,7 +120,11 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
 
-<details><summary><h5>Premade data parsing methods:</h5></summary>
+<details><summary>
+
+#### Premade data parsing methods:
+
+</summary>
 
 ---
 
@@ -195,7 +205,11 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 </details>
 
 
-<details><summary><h5>Standard data parsing methods:</h5></summary>
+<details><summary>
+
+#### Standard data parsing methods:
+
+</summary>
 
 ---
 
@@ -214,15 +228,25 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
        wiki.getAllTitlesUsingTheseTemplates("Infobox Item", "Infobox Bonuses") // List<String>
     ```
 
-- Get all templates present on a page:
+- Get all template names present on a page:
   - ```kotlin
-       wiki.getTemplatesOnPage("Baby chinchompa") // List<String>
+       wiki.getNamesOfTemplatesOnPage("Baby chinchompa") // List<String>
     ```
 
 - Get all uses of a template across the entire Wiki:
   - ```kotlin
        wiki.getAllTemplateUses("Infobox Item") // Map<String, List<JsonObject>>
     ```
+  
+- Get all data for specified template(s) on a page: 
+  - ```kotlin
+       wiki.getTemplateDataOnPage("Baby chinchompa", "Infobox Item", "Infobox Bonuses") // Map<String, List<JsonObject>>
+    ``` 
+    
+- Get all data for all templates on a page:
+  - ```kotlin
+       wiki.getAllTemplateDataOnPage("Baby chinchompa") // Map<String, List<JsonObject>>
+    ``` 
 
 - Get all titles in categories with revisions since a specified date:
   - ```kotlin
@@ -230,13 +254,11 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
       wiki.getAllTitlesWithRevisionsSince(threeDaysAgo, "Items") // List<String>
       ```
 
-
 - Get last revision timestamp for title(s):
   - ```kotlin
       wiki.getLastRevisionTimestamp("Baby chinchompa", "Black chinchompa") // Map<String, String>
       wiki.getLastRevisionTimestamp(listOf("Baby chinchompa", "Black chinchompa")) // Map<String, String>
       ```
-
 
 - Dynamic Page List (DPL3) query:
   - ```kotlin
@@ -250,14 +272,31 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
   - Further explanation on DPL3 queries can be found below in [ScribuntoSession][ScribuntoSession.kt Link] and [DPL3 Documentation][DPL3 Documentation Link] 
 
 
+- MediaWiki Semantic Search: 
+  - ```kotlin
+    val query = listOf(
+        "[[Location JSON::+]]",
+        "?#-=title",
+        "?Production JSON",
+    )
+    val response = wiki.smwAsk(query) // JsonElement
+    ```
 
-
-
+  
 ---
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
 
-### ScribuntoSession.kt ([ScribuntoSession.kt][ScribuntoSession.kt Link])
+## Scribunto Session ([ScribuntoSession.kt][ScribuntoSession.kt Link])
+
+###### The Scribunto Session connects to the [MediaWiki API][MediaWiki Link] and allows for the execution of [Lua scripts][Lua Link] on the Wiki.
+<br>
+
+#### _Why is that useful?_
+* Executing custom [Lua][Lua Link] scripts on the Wiki.
+* Loading data from the Wiki Lua modules.
+* Using the [DPL3][DPL3 Documentation Link] query language to query the Wiki.
+* Controlling the format and the volume of the data returned by the Wiki.
 
 <details><summary>
 
@@ -281,19 +320,19 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
    ```
 
 - Optionally disable the default code included in the session, you can add your own code with the `withCode` function.
-    - ```.withoutDefaultCode()```
-- Optionally set the module the session will use, by default this is `"Var"`.
-    - ```.withWikiModule("ModuleName")```
-- Optionally add code to the session.
-    - ```.withCode("print('Hello World')")```
-- Optionally add code to the session.
-    - ```.withCode { /* Use the Lua Builder */ }```
-
-  #### Using a Scribunto Session:
-
-  ```kotlin
-
-  ```
+    - ```kotlin
+      .withoutDefaultCode()
+      ```
+- Optionally set the module the session will use, by default this is `"Var"`, for no particular reason other than being a small module.
+    - ```kotlin
+      .withWikiModule("ModuleName")
+      ```
+- Optionally add code to persist in the session.
+    - ```kotlin
+      .withCode("print('Hello World')")
+      .withCode { /* Use the Lua Builder */ }
+      ```
+    - See [LuaBuilder.kt][LuaBuilder.kt Link] for more information on the Lua Builder.
 
 </p>
 
@@ -301,7 +340,30 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 </details>
 
-<details><summary><h5>LuaBuilder.kt</h5></summary>
+<details><summary>
+
+#### Using a Scribunto Session:
+
+</summary>
+
+---
+
+  ```kotlin
+
+  ```
+
+---
+
+</details>
+
+
+## Lua Builder ([LuaBuilder.kt][LuaBuilder.kt Link])
+
+<details><summary>
+
+###### The Lua Builder is a [DSL][Kotlin DSL Link] for easily creating [Lua][Lua Link] code from [Kotlin][Kotlin Link].
+
+</summary>
 
 ---
 
@@ -390,3 +452,5 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 [MediaWiki Image]: TODO()
 
 [DPL3 Documentation Link]: https://www.mediawiki.org/wiki/Extension:DynamicPageList_(DPL)
+
+[Kotlin DSL Link]: https://docs.gradle.org/current/userguide/kotlin_dsl.html

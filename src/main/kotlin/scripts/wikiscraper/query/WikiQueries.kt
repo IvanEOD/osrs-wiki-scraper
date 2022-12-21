@@ -15,8 +15,6 @@ import scripts.wikiscraper.query.WikiQueryDefaults.isCommonIgnore
 import scripts.wikiscraper.query.WikiQueryDefaults.isNotCommonIgnore
 import scripts.wikiscraper.utility.*
 import java.text.SimpleDateFormat
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import java.util.*
 
 
@@ -288,11 +286,42 @@ fun OsrsWiki.getAllTemplateUses(template: String): Map<String, List<JsonObject>>
     return returnList.flatten().groupingBy { it.first }.fold(emptyList()) { acc, (_, value) -> acc + value }
 }
 
-fun OsrsWiki.getTemplatesOnPage(title: String): List<String> {
+fun OsrsWiki.getTemplateDataOnPage(pageTitle: String, vararg templates: String): Map<String, List<JsonObject>> {
+    val (_, response) = scribunto {
+        "templates".local() `=` templates.toList()
+        +"getTemplatesWithDataOnPage(\"$pageTitle\", templates, true)"
+    }
+    val responseObject = runCatching { response.asJsonObject }.getOrNull() ?: return emptyMap()
+    val returnMap = mutableMapOf<String, List<JsonObject>>()
+    templates.forEach { templateName ->
+        val template = responseObject[templateName]
+        val templateList = mutableListOf<JsonObject>()
+        if (template == null || template.isJsonNull) {
+            returnMap[templateName] = templateList
+            return@forEach
+        }
+        fun addElement(element: JsonElement) {
+            when (element) {
+                is JsonArray -> element.forEach { addElement(it) }
+                is JsonObject -> templateList.add(element)
+            }
+        }
+        addElement(template)
+        returnMap[templateName] = templateList
+    }
+    return returnMap
+}
+
+fun OsrsWiki.getNamesOfTemplatesOnPage(title: String): List<String> {
     val (success, response) = bulkScribunto {
         +"getTemplatesOnPage(\"$title\", true)"
     }
     return responseToArray(response).map { it.asString }
+}
+
+fun OsrsWiki.getAllTemplateDataOnPage(title: String): Map<String, List<JsonObject>> {
+    val templatesOnPage = getNamesOfTemplatesOnPage(title)
+    return getTemplateDataOnPage(title, *templatesOnPage.toTypedArray())
 }
 
 fun OsrsWiki.getAllTitlesUsingTheseTemplates(vararg templates: String): List<String> {
@@ -446,11 +475,28 @@ fun OsrsWiki.getNpcDetails(vararg npcName: String): Map<String, List<NpcDetails>
     val map = mutableMapOf<String, MutableList<NpcDetails>>()
     val data = result.asJsonObject
     for (title in titles) {
-        val titleResult = data.getAsJsonObject(title)
-        val details = NpcDetails.fromJsonObject(titleResult)
-        details.forEach { (title, list) ->
-            map.getOrPut(title) { mutableListOf() }.addAll(list)
+        when (val titleResult = data[title]) {
+            is JsonArray -> {
+                val array = titleResult.asJsonArray
+                if (array.isEmpty) continue
+                array.forEach {
+                    val obj = it.asJsonObject
+                    val details = NpcDetails.fromJsonObject(obj)
+                    details.forEach { (title, list) ->
+                        map.getOrPut(title) { mutableListOf() }.addAll(list)
+                    }
+                }
+            }
+
+            is JsonObject -> {
+                val obj = titleResult.asJsonObject
+                val details = NpcDetails.fromJsonObject(obj)
+                details.forEach { (title, list) ->
+                    map.getOrPut(title) { mutableListOf() }.addAll(list)
+                }
+            }
         }
+
     }
     return map
 }

@@ -48,7 +48,7 @@ class ScribuntoSession internal constructor(private val wiki: OsrsWiki, sessionM
     }
 
     @Throws(ScribuntoError::class)
-    fun update(response: ScribuntoResponse) {
+    private fun update(response: ScribuntoResponse) {
         if (id == -1) {
             id = response.session
             size = response.sessionSize

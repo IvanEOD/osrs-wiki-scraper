@@ -1,7 +1,7 @@
 package scripts.wikiscraper
 
 import scripts.wikiscraper.query.*
-import scripts.wikiscraper.utility.GSON
+import scripts.wikiscraper.utility.toVersionedMap
 
 
 /* Written by IvanEOD 12/9/2022, at 9:03 AM */
@@ -10,12 +10,19 @@ fun main() {
 
     val wiki = OsrsWiki.builder().build()
 
-    val titles = wiki.getAllTitlesUsingTheseTemplates("LocLine", "Infobox Monster")
-    println("Found ${titles.size} titles that use both LocLine and Infobox Monster templates")
-    val results = wiki.getTemplatesFromTitles(listOf("LocLine", "Infobox Monster"), titles.subList(0, maxOf(20, titles.size)))
-    println(results)
-//
-//    println(results)
+
+    val templates = wiki.getAllTemplateDataOnPage("Man")
+
+    println("Templates on page: Man")
+    templates.forEach { (title, list) ->
+        println(title)
+        list.forEach { jsonObject ->
+            val mapped = jsonObject.toVersionedMap()
+            mapped.debug("    ")
+        }
+    }
+
+
 
 }
 

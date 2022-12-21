@@ -20,6 +20,14 @@ function tableEach(t, action)
     end
 end
 
+function tableConcat(t, operator)
+    local result = ''
+    tableEach(t, function(k, v)
+        result = result .. operator(k, v)
+    end)
+    return result
+end
+
 function tableAll(t, predicate)
     for k, v in ipairs(t) do
         if (not predicate(k, v)) then
@@ -98,6 +106,18 @@ function tableNotContains(t, value)
         return k == value or v == value
     end)
 end
+
+function formatTemplatesToIncludeString(t)
+    return tableConcat(t, function(key, value)
+        local returnValue = "{"..value.."}"
+        if (key ~= #t) then
+            returnValue = returnValue..","
+        end
+        return returnValue
+    end)
+end
+
+formatTemplatesToIncludeString({"Infobox Monster", "LocLine"})
 
 function startsWith(string, prefix)
     return string:sub(1, #prefix) == prefix
@@ -275,6 +295,30 @@ function getTemplatesOnPage(title, printResults)
         printReturn(result)
     end
     return result
+end
+
+function getTemplatesWithDataOnPage(title, templates, printResults)
+    local results = {}
+    local result = dpl.ask {
+        title = title,
+        include = formatTemplatesToIncludeString(templates)
+    }
+
+    if (result ~= nil and result[1] ~= nil) then
+        local include = result[1]["include"]
+        if (include ~= nil) then
+            for _, template in ipairs(templates) do
+                local data = include[template]
+                if (data ~= nil) then
+                    results[template] = data
+                end
+            end
+        end
+    end
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
 end
 
 function getModulesOnPage(title, printResults)

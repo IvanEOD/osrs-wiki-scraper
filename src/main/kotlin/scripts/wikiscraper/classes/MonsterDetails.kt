@@ -52,6 +52,7 @@ data class MonsterDetails(
     val crushDefenceBonus: Int = 0,
     val magicDefenceBonus: Int = 0,
     val rangeDefenceBonus: Int = 0,
+    val dropVersion: String = "",
     val immunePoison: Boolean = false,
     val immuneVenom: Boolean = false,
     val immuneCannon: Boolean = false,
@@ -101,6 +102,7 @@ data class MonsterDetails(
         prefixPrint("    Crush Defence Bonus: $crushDefenceBonus")
         prefixPrint("    Magic Defence Bonus: $magicDefenceBonus")
         prefixPrint("    Range Defence Bonus: $rangeDefenceBonus")
+        prefixPrint("    Drop Version: $dropVersion")
         prefixPrint("    Immune Poison: $immunePoison")
         prefixPrint("    Immune Venom: $immuneVenom")
         prefixPrint("    Immune Cannon: $immuneCannon")
@@ -121,7 +123,6 @@ data class MonsterDetails(
             else -> value?.boolean() ?: false
         }
 
-
         fun fromJsonObject(jsonObject: JsonObject): Map<String, List<MonsterDetails>> {
             val versionedMap = jsonObject.toVersionedMap()
             println("Versioned Map: ")
@@ -133,18 +134,12 @@ data class MonsterDetails(
             val map = mutableMapOf<String, MutableList<MonsterDetails>>()
 
             versionedMap.getIndividualVersions().forEach { versionMap ->
-                val name = versionMap["name"]!!
+                val title = versionMap["name"]!!
                 val details = fromMap(versionMap)
-                map.getOrPut(name) { mutableListOf() }.add(details)
+                map.getOrPut(title) { mutableListOf() }.add(details)
             }
             return map
         }
-
-        //Title Result: {
-        // "str":"160",
-        // "dcrush":"50",
-        // "id":"7806",
-        // "immunevenom":"No","amagic":"0","immunepoison":"No","def":"280","xpbonus":"37.5","mage":"1","dmagic":"300","hitpoints":"200","slayxp":"275","dslash":"20","attbns":"280","strbns":"30","release":"[[7 September]] [[2017]]","members":"Yes","range":"320","respawn":"50","mbns":"0","dstab":"20","drange":"300","poisonous":"No","update":"Fossil Island","immunecannon":"No","image":"[[File:Deranged archaeologist.png|120px]]","cat":"Bosses","attack style":"[[Ranged]], [[Melee]]","size":"1","rngbns":"-10","att":"280","max hit":"25 (standard), 56 (special direct hit), 18+ (special indirect hit)","immunethrall":"No","name":"Deranged archaeologist","arange":"90","aggressive":"Yes","combat":"276","examine":"He's seen things that people wouldn't believe.","assignedby":"chaeldar,nieve,duradel","attack speed":"3"}
 
         fun fromMap(map: Map<String, String>): MonsterDetails {
             println(map)
@@ -200,6 +195,7 @@ data class MonsterDetails(
             val crushDefenceBonus = map["dcrush"]?.toIntOrNull() ?: 0
             val magicDefenceBonus = map["dmagic"]?.toIntOrNull() ?: 0
             val rangeDefenceBonus = map["drange"]?.toIntOrNull() ?: 0
+            val dropVersion = map["dropversion"] ?: ""
             val immunePoison = isImmune(map["immunepoison"])
             val immuneVenom = isImmune(map["immunevenom"])
             val immuneCannon = isImmune(map["immunecannon"])
@@ -213,7 +209,7 @@ data class MonsterDetails(
                 hitpoints, attack, strength, defence, ranged, mage, attackBonus, strengthBonus,
                 magicAttackBonus, magicStrengthBonus, rangeAttackBonus, rangeStrengthBonus,
                 stabDefenceBonus, slashDefenceBonus, crushDefenceBonus, magicDefenceBonus,
-                rangeDefenceBonus, immunePoison, immuneVenom, immuneCannon, immuneThrall,
+                rangeDefenceBonus, dropVersion, immunePoison, immuneVenom, immuneCannon, immuneThrall,
             )
         }
 

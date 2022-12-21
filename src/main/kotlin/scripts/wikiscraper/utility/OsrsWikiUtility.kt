@@ -129,18 +129,7 @@ internal fun JsonObject.toStringMap(): Map<String, String> {
 
 internal fun JsonObject.toVersionedMap(): VersionedMap {
     val templateProperties = mutableListOf<TemplateProperty>()
-    println("PreVersioned: $this")
-    val keys = keySet()
-    println("Pre versioned keys = $keys")
-
     TemplateProperty.parse(this.keySet()).forEach(templateProperties::add)
-
-    println("Template Properties: ")
-    templateProperties.forEach {
-        println(it)
-    }
-
-
     val versionCount = templateProperties.maxOfOrNull { maxOf(it.getKeyVersions().size, 1) } ?: 1
     val templatePropertyDataList = mutableListOf<TemplatePropertyData>()
     templateProperties.forEach { property ->
