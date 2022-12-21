@@ -15,6 +15,8 @@ import scripts.wikiscraper.query.WikiQueryDefaults.isCommonIgnore
 import scripts.wikiscraper.query.WikiQueryDefaults.isNotCommonIgnore
 import scripts.wikiscraper.utility.*
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 
 
@@ -630,7 +632,6 @@ private fun cleanLocationName(name: String): String {
     return name.replace("[[", "").replace("]]", "")
         .split("|").last()
 }
-
 private fun responseToArray(response: JsonElement): JsonArray {
     if (response is JsonArray) return response
     val responseObject = response.asJsonObject
@@ -642,7 +643,6 @@ private fun responseToArray(response: JsonElement): JsonArray {
     }
     return array
 }
-
 private val WikiStringExchangeDataMapType = object : TypeToken<Map<String, WikiExchangeData>>() {}.type
 private val ignorePrefixes = listOf("Template:", "Module:", "Category:", ":Category:", "File:")
 

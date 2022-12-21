@@ -5,7 +5,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrl
-import scripts.wikiscraper.classes.ItemBuyLimits
 import scripts.wikiscraper.lua.LuaGlobalScope
 import scripts.wikiscraper.lua.ScribuntoSession
 import scripts.wikiscraper.lua.SessionManager
@@ -113,26 +112,6 @@ class OsrsWiki private constructor() {
             throwable.printStackTrace()
             OsrsWiki.RequestResult.None
         }
-    }
-
-    internal fun ItemBuyLimits.Companion.fetch(): ItemBuyLimits {
-        val response = client.newCall(BuyLimitsUrl).body?.string() ?: ""
-        if (response.isEmpty()) throw Exception("Failed to fetch buy limits")
-        val result = mutableMapOf<String, Int>()
-        val lines = response.split("\n")
-        var lastUpdateLong = 0L
-        var lastUpdateDateString = ""
-        for (line in lines) {
-            val matches = BuyLimitsRegex.getAllMatchGroups(line)
-            if (matches.size >= 2) {
-                val key = matches[0]
-                val value = matches[1]
-                if (key == "%LAST_UPDATE%") lastUpdateLong = value.toLong()
-                if (key == "%LAST_UPDATE_F%") lastUpdateDateString = value
-                else result[key] = value.toIntOrNull() ?: -1
-            }
-        }
-        return ItemBuyLimits(lastUpdateLong, lastUpdateDateString, result)
     }
 
     inner class Builder internal constructor() {
