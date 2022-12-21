@@ -23,31 +23,31 @@
                 <li><a href="#built-with">Built With</a></li>
             </ul>
         </li>
-        <li>OsrsWiki
-        <ol>
+        <li><a href="#osrswiki-osrswikikt">OsrsWiki</a>
+        <ul>
             <li><a href="#osrs-wiki">OsrsWiki Builder</a> </li>
             <li><a href="#osrs-wiki">Premade data parsing methods</a></li>
             <li><a href="#osrs-wiki">Standard data parsing methods</a></li>
             <li><a href="#osrs-wiki-code">Code</a></li>
-        </ol>
+        </ul>
         </li>
-        <li>Scribunto Session
-        <ol>
-            <li><a href="#osrs-wiki">Usage</a></li>
-            <li><a href="#osrs-wiki-code">Code</a></li>
-        </ol>
-        </li>
-        <li>Lua Builder
+        <li><a href="#scribunto-session-scribuntosessionkt">Scribunto Session</a>
         <ul>
             <li><a href="#osrs-wiki">Usage</a></li>
             <li><a href="#osrs-wiki-code">Code</a></li>
         </ul>
         </li>
-        <li>Utility classes
-        <ol>
+        <li><a href="#lua-builder-luabuilderkt">Lua Builder</a>
+        <ul>
             <li><a href="#osrs-wiki">Usage</a></li>
             <li><a href="#osrs-wiki-code">Code</a></li>
-        </ol>
+        </ul>
+        </li>
+        <li><a href="#utility-classes">Utility classes</a>
+        <ul>
+            <li><a href="#osrs-wiki">Usage</a></li>
+            <li><a href="#osrs-wiki-code">Code</a></li>
+        </ul>
         </li>
         <li><a href="#useful-references">Useful References</a></li>
     </ul>
@@ -300,8 +300,6 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 </summary>
 
-<br>
-
 #### _Why is that useful?_
 * Executing custom [Lua][Lua Link] scripts on the Wiki.
 * Loading data from the Wiki Lua modules.
@@ -358,9 +356,56 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 ---
 
-  ```kotlin
+- Send a request with a string of Lua code:
+  - ```kotlin
+      session.sendRequest("print(\"Hello World\"") // Pair<Boolean, JsonElement>
+    ```
+- Send a request with a [LuaBuilder][LuaBuilder.kt Link] instance:
+  - ```kotlin
+      session.sendRequest {
+        /* Use the Lua Builder */
+      }
+      // Pair<Boolean, JsonElement>
+    ``` 
+- Send a request with the first parameter being `true` and it will automatically refresh the Scribunto Session:
+  - ```kotlin
+      session.sendRequest(true, "print(\"Hello World\"") // Pair<Boolean, JsonElement>
+      session.sendRequest(true) {
+            /* Use the Lua Builder */
+      }    
+      // Pair<Boolean, JsonElement>
+    ``` 
+    
+- The return value from the `sendRequest` function is a `Pair<Boolean, JsonElement>` where the first value is whether or not the request was successful and the second value is the response from the Wiki `print` return field.
 
-  ```
+
+- To get a value back from the wiki use the Lua `print` function.
+
+
+- The default Lua code provided includes a method to return values called ``printReturn`` and will return the input value as a JSON string.
+  - ```json
+    {
+        "success": true,
+        "message": "Only present if success is false",
+        "printReturn": "{\"json\": \"value\"}"        
+    }
+    ``` 
+
+- The session uses the same `Session ID` for each request. The wiki will continue to add the code the requests to the session until the session is refreshed or the session expires.
+
+
+- The session will automatically refresh if the session expires or if the session is refreshed manually.
+
+
+- If the session has failed too many requests since the last refresh it will automatically refresh.
+
+
+- The session can be refreshed manually:
+  - ```kotlin
+      session.refresh() 
+    ```
+     
+ 
 
 ---
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -372,13 +417,236 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <details><summary>
 
-###### The Lua Builder is a [DSL][Kotlin DSL Link] for easily creating [Lua][Lua Link] code from [Kotlin][Kotlin Link].
+###### The Lua Builder is a [DSL][Kotlin DSL Link] for easily creating [Lua][Lua Link] code from [Kotlin][Kotlin Link]. It is not intended to be a full Lua interpreter or converter, but rather a tool to make it easier to create Lua code.
 
 </summary>
 
 ---
 
+- You can create a [LuaScope][LuaScope Link] instance with the `lua` function:
+  - ```kotlin
+      lua {
+        /* Use the Lua Builder */
+      }
+    ``` 
+    
+- The [LuaScope][LuaScope Link] will convert values to a [Lua][Lua Link] representation.
 
+
+- The supported value types are:
+  - ``String``
+  - ``Number``
+  - ``Date``
+  - ``Boolean``
+  - ``Map<*, *>`` (``*`` values may be any of the above types)
+  - ``Iterable<*>`` (``*`` values may be any of the above types)
+
+
+- To set a key's value use <code>\`=\`</code> like <code>"key" \`=\` "value"</code>.
+
+
+- There are two types of LuaScope with slight differences.
+  - The [LuaGlobalScope][LuaGlobalScope.kt Link]
+    - This is the default scope and only allows `String` keys.
+    - These values allow the use of ".local()" to prepend the key with "local" making it a local variable.
+      - ```"myValue".local()``` will output ``local myValue``
+ 
+
+  - The [LuaTableScope][LuaTableScope.kt Link]
+   - This scope allows `String`, `Number`, `Boolean`, and `Date` keys.
+   - These values can not use `.local()` because they are values in a table.
+
+ <table>
+<tr>
+  <th align="center">Kotlin</th>
+  <th align="center">Lua Output</th> 
+</tr> 
+<tr>
+<td>
+
+```kotlin
+"myValue" `=` "value"
+```
+</td>
+<td>
+
+```lua
+myValue = "value"
+```
+</td>
+</tr>
+<tr>
+<td>
+      
+```kotlin
+"myValue".local() `=` "value"
+```
+</td>
+<td>
+
+  ```lua
+  local myValue = "value"
+  ```
+</td>
+</tr>
+<tr>
+<td>
+
+```kotlin
+"myModule" `=` require("ModuleName")
+```
+</td>
+<td>
+
+```lua
+myModule = require("ModuleName")
+```
+</td>
+</tr>
+<tr>
+<td>
+
+```kotlin
++"print('This code is just added as is to the Lua script')"
+```
+</td>
+<td>
+
+```lua
+print('This code is just added as is to the Lua script')
+```
+</td>
+</tr>
+<tr>
+<td>
+
+```kotlin
+"myTable" `=` {
+    "myKey" `=` "myValue"
+    48 `=` Date()
+    Date() `=` "myValue"
+    1.0 `=` 1
+    true `=` "myTrueValue"
+    "something" `=` true
+    "myListInLua" `=` listOf("a", "b", "c")
+    "myMapInLua" `=` mapOf("a" to "b", "c" to "d")
+  }
+```
+
+Inside the brackets is [LuaTableScope][LuaTableScope.kt Link] which allows values other than ``String`` to be keys.
+
+</td>
+<td style="align-content: baseline">
+
+
+```lua
+myTable = { 
+    ["myKey"] = "myValue",
+    [48] = "2022-12-21 17:33:09",
+    ["2022-12-21 17:33:09"] = "myValue",
+    [1.0] = 1,
+    [true] = "myTrueValue",
+    ["something"] = true,
+    ["myListInLua"] = {"a", "b", "c"},
+    ["myMapInLua"] = {
+      ["a"] = "b", 
+      ["c"] = "d"
+    }
+}
+```
+
+
+</td>
+</tr>
+</table>
+
+---
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+</details>
+
+## Utility Classes
+
+<details><summary>
+
+###### Some notable classes used by and made available by the scraper.
+
+</summary>
+
+---
+
+- ### Versioned Map ([VersionedMap.kt][VersionedMap.kt Link])
+  - This is used for templates from the wiki to parse versioned data and determine images and page references within the value. 
+  - The easiest/best way to obtain this is by calling ``.toVersionedMap()`` on a `JsonObject` received from the wiki.
+    - ```kotlin
+        val versionedMap = jsonObject.toVersionedMap()
+      ```
+  
+<div align="left">
+<div align="left" style="width: min-content; margin-left: 8%">
+<div style="width: max-content">
+The <code>VersionedMap</code> will create a <code>TemplatePropertyData</code> for each key:
+
+<div style="width: min-content">
+<div style="width: min-content">
+<div align="left">
+
+```kotlin
+data class TemplatePropertyData(
+  val name: String,
+  val key: String,
+  val isWikiKey: Boolean,
+  val version: Int,
+  val value: String
+)
+```
+</div>
+</div>
+
+Example Template Data:
+<div style="width: min-content">
+<div style="width: min-content">
+<div align="left">
+
+```json
+{
+  "id1" : 111,
+  "id2" : 222,
+  "id3" : 333
+}
+```
+</div>
+</div>
+
+Would create these property data classes:
+<div style="width: min-content">
+<div align="left" style="width: min-content">
+
+```kotlin
+
+TemplatePropertyData(name="id1", key="id", isWikiKey=true, version=1, value="111")
+TemplatePropertyData(name="id2", key="id", isWikiKey=true, version=2, value="222")
+TemplatePropertyData(name="id3", key="id", isWikiKey=true, version=3, value="333")
+
+```
+
+</div>
+</div>
+
+By default getting a property without the version will return `Version 0`.</br>
+<div style="margin-left: 8%; font-size: 0.8em">
+
+Version 0 is all values combined, or in a single versioned property, the value itself.</br>
+You can also use the original key if you know it and are expecting it.</br> 
+``id3`` will work the same as ``["id", 3]``
+
+</div>
+
+```kotlin
+val id = versionedMap["id"] // "111, 222, 333"
+val id1 = versionedMap["id", 1] // "111"
+```
+
+</div>
 
 
 
@@ -388,7 +656,17 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 
 
-<details><summary><h5>Useful References:</h5></summary>
+<details><summary>
+
+## Useful References
+
+</summary>
+
+<details><summary>
+
+###### Some useful references to assist in using this project.
+
+</summary>
 
 ---
 
@@ -410,6 +688,9 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
   * [Semantic Media Wiki GitHub](https://github.com/SemanticMediaWiki/SemanticScribunto/) 
 
 ---
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+</details>
+
 
 </details>
 
@@ -419,6 +700,11 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 [ScribuntoSession.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/ScribuntoSession.kt
 
 [LuaBuilder.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
+[LuaScope Link]: TODO()
+[LuaGlobalScope.kt Link]: TODO()
+[LuaTableScope.kt Link]: TODO()
+
+[VersionedMap.kt Link]: TODO()
 
 [DropDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/DropDetails.kt
 

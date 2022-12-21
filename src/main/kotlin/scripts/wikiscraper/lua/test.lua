@@ -1,4 +1,3 @@
-
 function tableEach(t, action)
     for k, v in ipairs(t) do
         action(k, v)
@@ -13,15 +12,23 @@ function tableConcat(t, operator)
     return result
 end
 
-
 function formatTemplatesToIncludeString(t)
     return tableConcat(t, function(key, value)
-        local returnValue = "{"..value.."}"
+        local returnValue = "{" .. value .. "}"
         if (key ~= #t) then
-            returnValue = returnValue..","
+            returnValue = returnValue .. ","
         end
         return returnValue
     end)
 end
 
-print(formatTemplatesToIncludeString({"Infobox Monster", "LocLine"}))
+myTable = {
+    ["myKey"] = "myValue",
+    [48] = "2022-12-21 17:33:09",
+    ["2022-12-21 17:33:09"] = "myValue",
+    [1.0] = 1,
+    [true] = "myTrueValue",
+    ["something"] = true
+}
+
+print(formatTemplatesToIncludeString({ "Infobox Monster", "LocLine" }))

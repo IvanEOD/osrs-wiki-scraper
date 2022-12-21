@@ -55,11 +55,6 @@ sealed interface LuaScope {
     infix fun String.`=`(value: LuaTableScope.() -> Unit): LuaScope = privateSet(this, value)
 
     fun String.ref() = CustomLuaValue { this }
-    operator fun String.invoke(vararg arguments: Any) = privateSet("", CustomLuaValue { "$this(${arguments.joinToString(",") { toLuaValueString(it) }})" })
-    fun String.invokeMethod(methodName: String, vararg arguments: Any) = "$this:$methodName".invoke(*arguments)
-    fun String.call(vararg arguments: Any) = "$this.".invoke(*arguments)
-    fun String.callMethod(methodName: String, vararg arguments: Any) = "$this.$methodName".invoke(*arguments)
-
 
     operator fun String.unaryPlus(): LuaScope
 
@@ -79,14 +74,7 @@ interface LuaGlobalScope: LuaScope, LocalScope {
         return this@LuaGlobalScope
     }
 
-    fun require(module: String): CustomLuaValue {
-        var name = module
-        if (!name.startsWith("Module:")) {
-            name = "Module:$name"
-            name = name.replaceFirstChar { it.lowercase() }.split(" ").joinToString { "" }
-        }
-        return CustomLuaValue { "require(\"$name\")" }
-    }
+    fun require(module: String) = CustomLuaValue { "require(\"$module\")" }
 
 }
 
