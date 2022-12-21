@@ -97,7 +97,7 @@ internal fun JsonObject.toJsonObjectsList(key: String): MutableList<JsonObject> 
 }
 
 internal fun JsonObject.getString(key: String): String =
-    if (!has(key)) "" else get(key).let { if (it.isJsonPrimitive) it.asString else "" }
+    if (!has(key)) "" else get(key).let { if (it.isJsonPrimitive) it.asString.trim() else "" }
 
 internal fun JsonObject.hasNested(vararg keys: String): Boolean {
     if (keys.isEmpty()) return false
@@ -129,7 +129,18 @@ internal fun JsonObject.toStringMap(): Map<String, String> {
 
 internal fun JsonObject.toVersionedMap(): VersionedMap {
     val templateProperties = mutableListOf<TemplateProperty>()
+    println("PreVersioned: $this")
+    val keys = keySet()
+    println("Pre versioned keys = $keys")
+
     TemplateProperty.parse(this.keySet()).forEach(templateProperties::add)
+
+    println("Template Properties: ")
+    templateProperties.forEach {
+        println(it)
+    }
+
+
     val versionCount = templateProperties.maxOfOrNull { maxOf(it.getKeyVersions().size, 1) } ?: 1
     val templatePropertyDataList = mutableListOf<TemplatePropertyData>()
     templateProperties.forEach { property ->

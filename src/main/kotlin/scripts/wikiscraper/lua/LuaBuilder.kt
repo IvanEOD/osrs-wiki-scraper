@@ -54,8 +54,7 @@ sealed interface LuaScope {
     infix fun String.`=`(value: CustomLuaValue) : LuaScope = privateSet(this, value)
     infix fun String.`=`(value: LuaTableScope.() -> Unit): LuaScope = privateSet(this, value)
 
-    fun ref(value: String): CustomLuaValue = CustomLuaValue { value }
-    fun String.ref() = ref(this)
+    fun String.ref() = CustomLuaValue { this }
     operator fun String.invoke(vararg arguments: Any) = privateSet("", CustomLuaValue { "$this(${arguments.joinToString(",") { toLuaValueString(it) }})" })
     fun String.invokeMethod(methodName: String, vararg arguments: Any) = "$this:$methodName".invoke(*arguments)
     fun String.call(vararg arguments: Any) = "$this.".invoke(*arguments)

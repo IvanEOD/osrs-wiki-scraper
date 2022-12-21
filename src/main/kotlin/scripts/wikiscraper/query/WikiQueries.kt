@@ -11,6 +11,8 @@ import kotlinx.coroutines.*
 import scripts.wikiscraper.OsrsWiki
 import scripts.wikiscraper.classes.*
 import scripts.wikiscraper.lua.TitleQueue
+import scripts.wikiscraper.query.WikiQueryDefaults.isCommonIgnore
+import scripts.wikiscraper.query.WikiQueryDefaults.isNotCommonIgnore
 import scripts.wikiscraper.utility.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -32,15 +34,39 @@ object WikiQueryDefaults {
         listOf("Turael", "Krystilia", "Mazchna", "Vannaka", "Chaeldar", "Konar", "Nieve", "Steve", "Duradel")
 
 
+    internal val CommonIgnorePrefixes = listOf("Module:", "User:", "Template:")
+
+    fun isCommonIgnore(title: String) = CommonIgnorePrefixes.any { title.startsWith(it) }
+    fun isNotCommonIgnore(title: String) = !isCommonIgnore(title)
+
 
 }
 
 
+fun OsrsWiki.getVaribitDetails(): Map<Int, VarbitDetails> {
+    val varbitTitles = getAllTitlesUsingTemplate("Infobox Var").filter { isNotCommonIgnore(it) }
+    val queue = TitleQueue(varbitTitles)
+    val varbitDetails = mutableMapOf<Int, VarbitDetails>()
+    queue.execute { titles ->
+        val (success, response) = scribunto {
+            "data".local() `=` titles
+            +"loadVarbitData(data, true)"
+        }
+        val responseObject = response.asJsonObject
+        for (title in titles) {
+            val content = responseObject.getString(title)
+            val details = VarbitDetails.fromText(content)
+            varbitDetails[details.index] = details
+        }
+        if (!success) titles else null
+    }
+    return varbitDetails
+}
+
 fun OsrsWiki.getQuestRequirements(): Map<String, List<QuestRequirement>> {
     val map = mutableMapOf<String, MutableList<QuestRequirement>>()
-
     val (_, result) = scribuntoSession.sendRequest {
-        "questReqs" `=` require(WikiModules.QuestRequirementData).local()
+        "questReqs".local() `=` require(WikiModules.QuestRequirementData)
         +"printReturn(questReqs)"
     }
     val list = result.asJsonObject.asMap()
@@ -160,24 +186,55 @@ fun OsrsWiki.getItemPrice(id: Int): WikiItemPrice? {
     return WikiItemPrice(result.data[id]!!)
 }
 
-fun OsrsWiki.getItemBuyLimits(): ItemBuyLimits = ItemBuyLimits.fetch()
-fun OsrsWiki.getUnalchableItemTitles(): List<String> = getTitlesInCategory("Items that cannot be alchemised")
-
-fun OsrsWiki.getSlayerMonstersAndIds(): Map<String, Int> {
+fun OsrsWiki.getSlayerMonstersAndTaskIds(): Map<String, Int> {
     val (success, response) = scribunto {
         "slayerConsts".local() `=` require(WikiModules.SlayerConstants)
-        "slayerConsts:"("monsterIdToName")
+        "monsterIds".local() `=` emptyMap<String, Int>()
+        +"for k, v in slayerConsts.get_monster_pairs() do"
+        +"    monsterIds[k] = v"
+        +"end"
+        +"printReturn(monsterIds)"
     }
+    if (!success) return emptyMap()
+    return GSON.fromJson(response, object : TypeToken<Map<String, Int>>() {}.type)
+}
 
+fun OsrsWiki.getSlayerMastersThatAssign(name: String): List<String> {
+    val (success, response) = scribunto {
+        "slayerConsts".local() `=` require(WikiModules.SlayerTaskLibrary)
+        +"printReturn(slayerConsts.get_masters_that_assign(\"$name\"))"
+    }
+    if (!success) return emptyList()
+    val results: Map<String, Boolean> = GSON.fromJson(response, object : TypeToken<Map<String, Boolean>>() {}.type)
+    return results.mapNotNull { (name, assigned) -> if (assigned) name else null }
 }
 
 
-fun OsrsWiki.getSlayerMasterData(name: String)
+//fun OsrsWiki.getSlayerMasterData(name: String)
+
+
+fun OsrsWiki.getProductionDetails(): Map<String, ProductionDetails> {
+    val request = listOf("[[Production JSON::+]]", "?#-=title", "?Production JSON")
+    val (success, results) = scribunto {
+        "data".local() `=` request
+        +"printReturn(mw.smw.ask(data))"
+    }
+    val map = mutableMapOf<String, ProductionDetails>()
+    val resultsArray = results.asJsonArray
+    resultsArray.forEach { element ->
+        val jsonObject = element.asJsonObject
+        val title = jsonObject.getString("title")
+        val productionJson = JsonParser.parseString(jsonObject.getString("Production JSON").htmlUnescape())
+        val productionDetails = GSON.fromJson(productionJson, ProductionDetailsJson::class.java)
+        map[title] = productionDetails.toProductionDetails()
+    }
+    return map
+}
 
 
 fun OsrsWiki.dplAsk(query: Map<String, Any>): JsonElement {
     val (success, response) = bulkScribunto {
-        "query" `=` query.local()
+        "query".local() `=` query
         +"dplAsk(query, true)"
     }
     return response
@@ -185,10 +242,48 @@ fun OsrsWiki.dplAsk(query: Map<String, Any>): JsonElement {
 
 fun OsrsWiki.smwAsk(query: List<String>): JsonElement {
     val (success, response) = bulkScribunto {
-        "query" `=` query.local()
+        "query".local() `=` query
         +"smwAsk(query, true)"
     }
     return response
+}
+
+fun OsrsWiki.smwAsk(vararg query: String) = smwAsk(query.toList())
+
+fun OsrsWiki.getAllLocLineDetails(): Map<String, List<LocLineDetails>> = getAllTemplateUses("LocLine")
+    .filterKeys { !it.startsWith("User:") }
+    .mapValues {
+        it.value.map { json -> LocLineDetails.fromJsonObject(json) }
+    }
+
+fun OsrsWiki.getAllTemplateUses(template: String): Map<String, List<JsonObject>> {
+    val (withoutPrefix, withPrefix) = if (template.startsWith("Template:")) template.removePrefix("Template:") to template
+    else template to "Template:$template"
+    val returnList = runChunks(500) {
+        val response = dplAsk(
+            mapOf(
+                "uses" to withPrefix,
+                "count" to chunkSize,
+                "offset" to offset,
+                "include" to "{$withoutPrefix}"
+            )
+        )
+        val array = responseToArray(response)
+        val pairs = array.map { it.asJsonObject }
+            .mapNotNull {
+                val title = it.getString("title")
+                if (isCommonIgnore(title)) return@mapNotNull null
+                val include = it.getAsJsonObject("include")
+                val listLocations = mutableListOf<JsonObject>()
+                when (val locLine = include[withoutPrefix]) {
+                    is JsonArray -> locLine.forEach { line -> listLocations.add(line.asJsonObject) }
+                    is JsonObject -> listLocations.add(locLine)
+                }
+                title to listLocations
+            }
+        pairs.size to pairs
+    }
+    return returnList.flatten().groupingBy { it.first }.fold(emptyList()) { acc, (_, value) -> acc + value }
 }
 
 fun OsrsWiki.getTemplatesOnPage(title: String): List<String> {
@@ -196,6 +291,11 @@ fun OsrsWiki.getTemplatesOnPage(title: String): List<String> {
         +"getTemplatesOnPage(\"$title\", true)"
     }
     return responseToArray(response).map { it.asString }
+}
+
+fun OsrsWiki.getAllTitlesUsingTheseTemplates(vararg templates: String): List<String> {
+    val templatesLists = templates.associateWith { getAllTitlesUsingTemplate(it) }
+    return templatesLists.values.reduce { acc, list -> acc.intersect(list.toSet()).toList() }
 }
 
 fun OsrsWiki.getAllTitlesUsingTemplate(vararg templates: String): List<String> {
@@ -206,7 +306,6 @@ fun OsrsWiki.getAllTitlesUsingTemplate(vararg templates: String): List<String> {
     val returnList = runChunks(500) {
         val response = dplAsk(
             mapOf(
-                "namespace" to "",
                 "uses" to cleanedTemplates.pipeFence(),
                 "count" to chunkSize,
                 "offset" to offset
@@ -252,22 +351,17 @@ fun OsrsWiki.getExchangeData(itemNames: List<String>): Map<String, WikiExchangeD
     val map = mutableMapOf<String, WikiExchangeData>()
     val chunkSize = 200
     val queue = TitleQueue(itemNames, chunkSize)
-    val main = GlobalScope.launch {
-        with(queue) {
-            execute { list ->
-                val (success, response) = bulkScribunto {
-                    "data" `=` list.local()
-                    +"loadExchangeData(data, true, true)"
-                }
-                if (success) {
-                    val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
-                    map.putAll(data)
-                    emptyList()
-                } else list
-            }
+    queue.execute { list ->
+        val (success, response) = bulkScribunto {
+            "data".local() `=` list
+            +"loadExchangeData(data, true, true)"
         }
+        if (success) {
+            val data: Map<String, WikiExchangeData> = GSON.fromJson(response, WikiStringExchangeDataMapType)
+            map.putAll(data)
+            emptyList()
+        } else list
     }
-    runBlocking { main.join() }
     return map
 }
 
@@ -291,32 +385,27 @@ fun OsrsWiki.loadAllItemData(itemNames: List<String>): Map<String, List<JsonObje
     val map = mutableMapOf<String, MutableList<JsonObject>>()
     val chunkSize = 100
     val queue = TitleQueue(itemNames, chunkSize)
-    val main = GlobalScope.launch {
-        with(queue) {
-            execute { list ->
-                val (success, result) = bulkScribunto {
-                    "sessionData" `=` list
-                    +"loadItemData(sessionData, true)"
+    queue.execute { list ->
+        val (success, result) = bulkScribunto {
+            "sessionData" `=` list
+            +"loadItemData(sessionData, true)"
+        }
+        if (!success) list
+        else {
+            if (result.isJsonArray) {
+                val array = result.asJsonArray
+                if (array.isEmpty) emptyList()
+                else throw IllegalStateException("Unhandled JsonArray Response from Scribunto: $result")
+            } else {
+                val data = result.asJsonObject
+                for (title in list) {
+                    val titleResult = data.getAsJsonObject(title)
+                    map.getOrPut(title) { mutableListOf() }.add(titleResult)
                 }
-                if (!success) list
-                else {
-                    if (result.isJsonArray) {
-                        val array = result.asJsonArray
-                        if (array.isEmpty) emptyList()
-                        else throw IllegalStateException("Unhandled JsonArray Response from Scribunto: $result")
-                    } else {
-                        val data = result.asJsonObject
-                        for (title in list) {
-                            val titleResult = data.getAsJsonObject(title)
-                            map.getOrPut(title) { mutableListOf() }.add(titleResult)
-                        }
-                        emptyList()
-                    }
-                }
+                emptyList()
             }
         }
     }
-    runBlocking { main.join() }
     return map
 }
 
@@ -348,7 +437,7 @@ fun OsrsWiki.getAllItemDetails(): Map<String, List<ItemDetails>> {
 fun OsrsWiki.getNpcDetails(vararg npcName: String): Map<String, List<NpcDetails>> {
     val titles = npcName.toList()
     val (success, result) = bulkScribunto {
-        "data" `=` titles.local()
+        "data".local() `=` titles
         +"loadNpcData(data, true)"
     }
     if (!success) return emptyMap()
@@ -365,27 +454,53 @@ fun OsrsWiki.getNpcDetails(vararg npcName: String): Map<String, List<NpcDetails>
 }
 
 fun OsrsWiki.getMonsterDetails(vararg monsterName: String): Map<String, List<MonsterDetails>> {
-    val titles = monsterName.toList()
-    val (success, result) = bulkScribunto {
-        "data" `=` titles.local()
-        +"loadMonsterData(data, true)"
-    }
-    if (!success) return emptyMap()
+    println("Getting monster details for ${monsterName.size} monsters")
+    val monsterTitles = monsterName.toList()
     val map = mutableMapOf<String, MutableList<MonsterDetails>>()
-    val data = result.asJsonObject
-    println("Data")
-    println(data)
-    for (title in titles) {
-        val titleResult = data.getAsJsonObject(title)
-        println("Title Result: $titleResult")
-        val resultsMap = MonsterDetails.fromJsonObject(titleResult)
-        println("Results Map: $resultsMap")
-        resultsMap.forEach { (name, list) ->
-            if (name.isNotEmpty() && list.isNotEmpty())
-                map.getOrPut(name) { mutableListOf() }.addAll(list)
+    val queue = TitleQueue(monsterTitles, 200)
+
+    queue.execute { titles ->
+        val (success, result) = bulkScribunto {
+            "data".local() `=` titles
+            +"loadMonsterData(data, true)"
+        }
+        if (!success) {
+            println("Failed to get monster details")
+            println(result)
+            titles
+        } else {
+            if (result.isJsonArray) {
+                println("Json array was not expected ? ")
+                println(result)
+                titles
+            } else {
+                val data = result.asJsonObject
+                for (title in titles) {
+                    val titleResult = data.getAsJsonObject(title)
+                    println("Title Result: $titleResult")
+                    val resultsMap = MonsterDetails.fromJsonObject(titleResult)
+                    println("Results Map: $resultsMap")
+                    resultsMap.forEach { (name, list) ->
+                        if (name.isNotEmpty() && list.isNotEmpty())
+                            map.getOrPut(name) { mutableListOf() }.addAll(list)
+                    }
+                }
+                emptyList()
+            }
         }
     }
+
     return map
+}
+
+fun OsrsWiki.getAllNpcDetails(): Map<String, List<NpcDetails>> {
+    val titles = getAllNpcTitles()
+    return getNpcDetails(*titles.toTypedArray())
+}
+
+fun OsrsWiki.getAllMonsterDetails(): Map<String, List<MonsterDetails>> {
+    val titles = getAllMonsterTitles()
+    return getMonsterDetails(*titles.toTypedArray())
 }
 
 fun OsrsWiki.getAllMonsterTitles(): List<String> = getAllTitlesUsingTemplate("Infobox Monster")

@@ -360,3 +360,16 @@ function loadNpcData(titles, printResults)
     return results
 end
 
+function loadVarbitData(titles, printResults)
+    local results = {}
+    for _, title in pairs(titles) do
+        local titleObj = mw.title.new(title)
+        local content = titleObj and titleObj.getContent and titleObj:getContent()
+        results[title] = content
+    end
+    if (printResults) then
+        printReturn(results)
+    end
+    return results
+end
+

@@ -10,6 +10,19 @@ data class VarbitDetails(
     val classType: ClassType,
     val description: String
 ) {
+
+    fun debug(prefix: String = "") {
+        fun prefixPrint(message: String) { println("$prefix$message") }
+        prefixPrint("Varbit: $index")
+        prefixPrint("    Name: $name")
+        prefixPrint("    Type: $type")
+        prefixPrint("    Content: $content")
+        prefixPrint("    Class Type: $classType")
+        prefixPrint("    Description: $description")
+
+    }
+
+
     enum class VarbitType {
         Varbit,
         VarPlayer

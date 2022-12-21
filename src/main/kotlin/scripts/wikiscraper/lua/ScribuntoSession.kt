@@ -80,7 +80,6 @@ class ScribuntoSession internal constructor(private val wiki: OsrsWiki, sessionM
 
     @Throws(ScribuntoError::class)
     fun sendRequest(refreshSession: Boolean, code: String): Pair<Boolean, JsonElement> {
-//        println("Code: $code")
         val parameters = parameters(module, code, refreshSession)
         val response = wiki.formGet("scribunto-console", parameters)?.body?.string() ?: ""
         return processResponse(response)

@@ -126,6 +126,7 @@ data class MonsterDetails(
             val versionedMap = jsonObject.toVersionedMap()
             println("Versioned Map: ")
             versionedMap.debug("")
+            println("Map Contains Release: ${versionedMap.contains("release")}")
             val versions = versionedMap.versions
             val name = jsonObject["name"].asString
             println("Monster: $name, Versions: $versions")
@@ -139,7 +140,14 @@ data class MonsterDetails(
             return map
         }
 
+        //Title Result: {
+        // "str":"160",
+        // "dcrush":"50",
+        // "id":"7806",
+        // "immunevenom":"No","amagic":"0","immunepoison":"No","def":"280","xpbonus":"37.5","mage":"1","dmagic":"300","hitpoints":"200","slayxp":"275","dslash":"20","attbns":"280","strbns":"30","release":"[[7 September]] [[2017]]","members":"Yes","range":"320","respawn":"50","mbns":"0","dstab":"20","drange":"300","poisonous":"No","update":"Fossil Island","immunecannon":"No","image":"[[File:Deranged archaeologist.png|120px]]","cat":"Bosses","attack style":"[[Ranged]], [[Melee]]","size":"1","rngbns":"-10","att":"280","max hit":"25 (standard), 56 (special direct hit), 18+ (special indirect hit)","immunethrall":"No","name":"Deranged archaeologist","arange":"90","aggressive":"Yes","combat":"276","examine":"He's seen things that people wouldn't believe.","assignedby":"chaeldar,nieve,duradel","attack speed":"3"}
+
         fun fromMap(map: Map<String, String>): MonsterDetails {
+            println(map)
             var isHistoric = false
             var isBeta = false
             val idsString = map["id"] ?: ""
@@ -176,9 +184,9 @@ data class MonsterDetails(
             val slayerCategory = map["cat"]
             val assignedBy = map["assignedby"]?.split(",") ?: emptyList()
             val hitpoints = map["hitpoints"]?.toIntOrNull() ?: 0
-            val attack = map["attack"]?.toIntOrNull() ?: 0
-            val strength = map["strength"]?.toIntOrNull() ?: 0
-            val defence = map["defence"]?.toIntOrNull() ?: 0
+            val attack = map["att"]?.toIntOrNull() ?: 0
+            val strength = map["str"]?.toIntOrNull() ?: 0
+            val defence = map["def"]?.toIntOrNull() ?: 0
             val ranged = map["range"]?.toIntOrNull() ?: 0
             val mage = map["mage"]?.toIntOrNull() ?: 0
             val attackBonus = map["attbns"]?.toIntOrNull() ?: 0

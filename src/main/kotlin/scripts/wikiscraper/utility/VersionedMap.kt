@@ -63,6 +63,8 @@ class VersionedMap(val versions: Int, internal val properties: List<TemplateProp
         }
     }
 
+    operator fun contains(key: String): Boolean = properties.any { it.name == key }
+
 }
 
 

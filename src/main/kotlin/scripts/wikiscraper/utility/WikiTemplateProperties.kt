@@ -1,5 +1,6 @@
 package scripts.wikiscraper.utility
 
+
 /* Written by IvanEOD 12/3/2022, at 9:52 AM */
 sealed interface TemplateProperties {
     var name: String
@@ -27,13 +28,18 @@ internal sealed class TemplateProperty(private val tree: TemplatePropertyInterna
                 is VersionedPropertyTree.Node -> VersionedTemplateProperty(versionedProperty)
                 is VersionedPropertyTree.Leaf -> SimpleTemplateProperty(versionedProperty)
             }
+
+
+
+
         fun parse(keys: Collection<String>): List<TemplateProperty> {
+            val originalKeys = keys.toList()
             val checklist = keys.toMutableList()
             val returnList = mutableListOf<TemplateProperty>()
             while (checklist.isNotEmpty()) {
                 val key = checklist.first()
                 val chunk = getNameChunk(key, checklist)
-                if (chunk.length == 1) {
+                if (chunk.length <= 1) {
                     checklist.remove(key)
                     returnList.add(SimpleTemplateProperty(key))
                 } else {
@@ -48,6 +54,11 @@ internal sealed class TemplateProperty(private val tree: TemplatePropertyInterna
                     }
                 }
             }
+            println("Original keys contains 'release': ${originalKeys.contains("release")}")
+            println("Return list contains 'release': ${returnList.any { it.name == "release" }}")
+
+            val skipped = originalKeys.filter { !returnList.any { property -> property.getKey() != it } }
+            println("Skipped keys: $skipped")
             return returnList
         }
     }
@@ -196,6 +207,9 @@ private fun versionedProperty(
     val cleanedList = list.filter { it.startsWith(name) || it == name }
     val chunk = getNameChunk(name, cleanedList)
     if (chunk.isEmpty()) return parent?.addLeaf(name) ?: VersionedPropertyTree.Leaf(name)
+    else {
+        println("Chunk: $chunk")
+    }
     val versions = cleanedList.mapNotNull { it.substringAfter(chunk).firstOrNull()?.digitToIntOrNull() }
     val versioned = cleanedList.zip(versions).map { it.first to it.second }
     val versionedMap = versioned.groupBy { it.second }
@@ -228,7 +242,16 @@ private fun getNameChunk(name: String, list: List<String>): String {
         lastMatch = i
         runningList = matches
     }
-    return name.take(lastMatch + 1)
+    val possibleChunk = name.take(lastMatch + 1)
+
+    if (possibleChunk.length > 1) {
+        val matching = cleaned.filter { it.startsWith(possibleChunk) }
+        println("Chunked words = $matching")
+        val withNumbers = matching.filter { it.length > possibleChunk.length && it[possibleChunk.length].isDigit() }
+        if (withNumbers.size > 1) return possibleChunk
+    }
+
+    return ""
 }
 
 private fun List<IntArray>.distinctByVersion(): List<IntArray> = distinctBy { it.joinToString(".") }

@@ -35,7 +35,7 @@
 ---
 </details>
 
-<details><summary><h5>Using the OsrsWiki instance:</h5></summary>
+<details><summary><h5>Premade methods:</h5></summary>
 
 ---
    
@@ -55,16 +55,38 @@
      - ```wiki.getAllNpcTitles()``` &#10145; `["Abyssal demon", "Abyssal leech", "Abyssal lurker", ...]`
 
 
-   - Get [ItemDetails][ItemDetails.kt Link] by Item Name:
-     - ```wiki.getItemDetails("Bandos chestplate", "Bandos tassets", "Bandos boots")``` &#10145; `Map<String, List<ItemDetails>>`
+   - Get [ItemDetails][ItemDetails.kt Link]:
+     - By name(s) 
+       - ```wiki.getItemDetails("Bandos chestplate", "Bandos tassets", "Bandos boots")```
+       
+         &#10145; `Map<String, List<ItemDetails>>`
+     - All items
+       - ```wiki.getAllItemDetails()``` 
+       
+         &#10145; `Map<String, List<ItemDetails>>`
 
 
    - Get [NpcDetails][NpcDetails.kt Link] by NPC Name:
      - ```wiki.getNpcDetails("King Roald", "Robert The Strong")``` &#10145; `Map<String, List<NpcDetails>>`
+    
+
+   - Get [MonsterDetails][MonsterDetails.kt Link]:
+       - ```wiki.getMonsterDetails("Abyssal demon", "Abyssal leech", "Abyssal lurker")``` &#10145; `Map<String, List<MonsterDetails>>`
+       - ```wiki.getAllMonsterDetails()``` &#10145; `Map<String, List<MonsterDetails>>`
 
 
    - Get [QuestRequirement][QuestRequirement.kt Link]'s for all quests:
      - ```wiki.getQuestRequirements()``` &#10145; `Map<String, List<QuestRequirement>>`
+       
+
+   - Get [VarbitDetails][VarbitDetails.kt Link] for all varbits on the Wiki:
+     - ```wiki.getVarbitDetails()``` &#10145; `Map<Int, VarbitDetails>` 
+
+
+   - Get [ProductionDetails][ProductionDetails.kt Link] for all items with production data: 
+     - ```wiki.getProductionDetails()``` &#10145; `Map<String, ProductionDetails>` 
+
+
 
 ---
 </details>
@@ -144,6 +166,7 @@ a
 [VarbitDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/VarbitDetails.kt
 [WikiExchangeData.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiExchangeData.kt
 [WikiItemPrice.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiItemPrice.kt
-
+[ProductionDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/ProductionDetails.kt
 [NpcDetails.kt Link]: TODO()
+[MonsterDetails.kt Link]: TODO()
 
