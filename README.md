@@ -73,7 +73,11 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 ## OsrsWiki ([OsrsWiki.kt][OsrsWiki.kt Link])
 
-###### The OsrsWiki class is the main class of the project. It provides methods to scrape data from the OSRS Wiki.
+<details><summary>
+
+###### The OsrsWiki class is the main class of the project. It provides methods to scrape data from the [OSRS Wiki][OsrsWiki Link].
+
+</summary>
 
 <details><summary>
 
@@ -286,10 +290,16 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 ---
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
+</details>
 
 ## Scribunto Session ([ScribuntoSession.kt][ScribuntoSession.kt Link])
 
+<details><summary>
+
 ###### The Scribunto Session connects to the [MediaWiki API][MediaWiki Link] and allows for the execution of [Lua scripts][Lua Link] on the Wiki.
+
+</summary>
+
 <br>
 
 #### _Why is that useful?_
@@ -337,7 +347,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 </p>
 
 ---
-
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
 
 <details><summary>
@@ -353,9 +363,10 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
   ```
 
 ---
-
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
 
+</details>
 
 ## Lua Builder ([LuaBuilder.kt][LuaBuilder.kt Link])
 
@@ -367,8 +378,12 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 ---
 
----
 
+
+
+
+---
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
 
 
@@ -454,3 +469,5 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 [DPL3 Documentation Link]: https://www.mediawiki.org/wiki/Extension:DynamicPageList_(DPL)
 
 [Kotlin DSL Link]: https://docs.gradle.org/current/userguide/kotlin_dsl.html
+
+[OsrsWiki Link]: https://oldschool.runescape.wiki/
