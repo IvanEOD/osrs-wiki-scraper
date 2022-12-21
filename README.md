@@ -81,7 +81,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <details><summary>
 
-* #### OsrsWiki Builder:
+#### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OsrsWiki Builder:
 
 </summary>
 
@@ -124,9 +124,9 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
 
-* <details><summary>
+<details><summary>
 
-#### Premade data parsing methods:
+#### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Premade data parsing methods:
 
 </summary>
 
@@ -211,7 +211,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <details><summary>
 
-#### Standard data parsing methods:
+#### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Standard data parsing methods:
 
 </summary>
 
@@ -310,7 +310,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <details><summary>
 
-#### Creating a Scribunto Session:
+#### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Creating a Scribunto Session:
 
 </summary>
 
@@ -352,7 +352,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <details><summary>
 
-#### Using a Scribunto Session:
+#### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Using a Scribunto Session:
 
 </summary>
 
