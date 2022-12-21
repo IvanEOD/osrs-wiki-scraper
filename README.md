@@ -575,7 +575,13 @@ myTable = {
 ---
 
 - ### Versioned Map ([VersionedMap.kt][VersionedMap.kt Link])
-  - This is used for templates from the wiki to parse versioned data and determine images and page references within the value. 
+
+<details><summary>
+
+###### This is used for templates from the wiki to parse versioned data and determine images and page references within the value.
+
+</summary>
+ 
   - The easiest/best way to obtain this is by calling ``.toVersionedMap()`` on a `JsonObject` received from the wiki.
     - ```kotlin
         val versionedMap = jsonObject.toVersionedMap()
@@ -584,7 +590,8 @@ myTable = {
 <div align="left">
 <div align="left" style="width: min-content; margin-left: 8%">
 <div style="width: max-content">
-The <code>VersionedMap</code> will create a <code>TemplatePropertyData</code> for each key:
+
+- The <code>VersionedMap</code> will create a <code>TemplatePropertyData</code> for each key:
 
 <div style="width: min-content">
 <div style="width: min-content">
@@ -602,7 +609,7 @@ data class TemplatePropertyData(
 </div>
 </div>
 
-Example Template Data:
+- Example Template Data:
 <div style="width: min-content">
 <div style="width: min-content">
 <div align="left">
@@ -617,37 +624,53 @@ Example Template Data:
 </div>
 </div>
 
-Would create these property data classes:
+- Would create these property data classes:
 <div style="width: min-content">
 <div align="left" style="width: min-content">
 
 ```kotlin
-
 TemplatePropertyData(name="id1", key="id", isWikiKey=true, version=1, value="111")
 TemplatePropertyData(name="id2", key="id", isWikiKey=true, version=2, value="222")
 TemplatePropertyData(name="id3", key="id", isWikiKey=true, version=3, value="333")
-
 ```
 
 </div>
 </div>
 
-By default getting a property without the version will return `Version 0`.</br>
-<div style="margin-left: 8%; font-size: 0.8em">
-
-Version 0 is all values combined, or in a single versioned property, the value itself.</br>
-You can also use the original key if you know it and are expecting it.</br> 
-``id3`` will work the same as ``["id", 3]``
+* You can check how many versions a template has with ``versionedMap.versions``
+* By default getting a property without the version will return `Version 0`.</br>
+* `Version 0` is all values combined, or in a single versioned property, the value itself.</br>
+* You can also use the original key if you know it and are expecting it.</br> 
+* ``id3`` will work the same as ``["id", 3]``
+* If a template has multiple versions, some values may be the same across all versions, and will not have a versioned key.
+* So if a version of a key is requested that does not exist, it will return the first or only value available.
+* You can get a full map of a specific version, or a list containing a map for each individual version.
 
 </div>
 
 ```kotlin
-val id = versionedMap["id"] // "111, 222, 333"
-val id1 = versionedMap["id", 1] // "111"
+val versionCount = versionedMap.versions    // 3
+
+val id = versionedMap["id"]                 // "111, 222, 333"
+val id1 = versionedMap["id", 1]             // "111"
+val id2 = versionedMap["id", 2]             // "222"
+val id5 = versionedMap["id", 5]             // "111"
+
+val version2 = versionedMap.getVersion(2)   // Map<String, String>
+val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, String>>
 ```
 
-</div>
 
+</details>
+
+
+- ### TitleQueue ([TitleQueue.kt][TitleQueue.kt Link])
+
+<details><summary>
+
+###### This is used for efficiently scraping data by title in bulk.
+
+</summary>
 
 
 ---
@@ -705,6 +728,7 @@ val id1 = versionedMap["id", 1] // "111"
 [LuaTableScope.kt Link]: TODO()
 
 [VersionedMap.kt Link]: TODO()
+[TitleQueue.kt Link]: TODO()
 
 [DropDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/DropDetails.kt
 
