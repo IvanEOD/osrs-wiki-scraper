@@ -79,7 +79,8 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 </summary>
 
-<details><summary>
+* <details>
+<summary>
 
 #### OsrsWiki Builder:
 
@@ -124,7 +125,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 </details>
 
-<details><summary>
+* <details><summary>
 
 #### Premade data parsing methods:
 
