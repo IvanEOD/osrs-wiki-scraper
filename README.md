@@ -79,10 +79,9 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 </summary>
 
-* <details>
-<summary>
+<details><summary>
 
-#### OsrsWiki Builder:
+* #### OsrsWiki Builder:
 
 </summary>
 
