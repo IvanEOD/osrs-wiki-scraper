@@ -125,14 +125,7 @@ data class MonsterDetails(
 
         fun fromJsonObject(jsonObject: JsonObject): Map<String, List<MonsterDetails>> {
             val versionedMap = jsonObject.toVersionedMap()
-            println("Versioned Map: ")
-            versionedMap.debug("")
-            println("Map Contains Release: ${versionedMap.contains("release")}")
-            val versions = versionedMap.versions
-            val name = jsonObject["name"].asString
-            println("Monster: $name, Versions: $versions")
             val map = mutableMapOf<String, MutableList<MonsterDetails>>()
-
             versionedMap.getIndividualVersions().forEach { versionMap ->
                 val title = versionMap["name"]!!
                 val details = fromMap(versionMap)
@@ -142,7 +135,6 @@ data class MonsterDetails(
         }
 
         fun fromMap(map: Map<String, String>): MonsterDetails {
-            println(map)
             var isHistoric = false
             var isBeta = false
             val idsString = map["id"] ?: ""

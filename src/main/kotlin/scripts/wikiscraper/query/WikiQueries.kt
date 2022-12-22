@@ -77,12 +77,12 @@ fun OsrsWiki.getQuestRequirements(): Map<String, List<QuestRequirement>> {
         val skills = value.asJsonObject.getAsJsonArray("skills")
 
         quests.forEach {
-            println("    Quest: $it")
+//            println("    Quest: $it")
             requirements.add(QuestRequirement.Quest(it.asString))
         }
 
         skills.forEach skillLoop@{
-            println("    Skill: $it")
+//            println("    Skill: $it")
             val skill = it.asJsonArray
             if (skill.isEmpty) return@skillLoop
             val skillName = skill[0].asString
@@ -525,9 +525,7 @@ fun OsrsWiki.getMonsterDetails(vararg monsterName: String): Map<String, List<Mon
                 val data = result.asJsonObject
                 for (title in titles) {
                     val titleResult = data.getAsJsonObject(title)
-                    println("Title Result: $titleResult")
                     val resultsMap = MonsterDetails.fromJsonObject(titleResult)
-                    println("Results Map: $resultsMap")
                     resultsMap.forEach { (name, list) ->
                         if (name.isNotEmpty() && list.isNotEmpty())
                             map.getOrPut(name) { mutableListOf() }.addAll(list)
