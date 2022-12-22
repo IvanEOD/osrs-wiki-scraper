@@ -485,7 +485,7 @@ myValue = "value"
     
 <tr>
     
-<td style="white-space: nowrap"><pre lang="kt">"myValue".local() `=` "value"</pre>
+<td style="justify-content: stretch"><pre lang="kt">"myValue".local() `=` "value"</pre>
 </td>
     
 <td>
@@ -507,10 +507,11 @@ local myValue = "value"
 </td>
     
 <td>
-
+ 
 ```lua
 myModule = require("ModuleName")
 ```
+     
 </td>
     
 </tr>
@@ -781,10 +782,10 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
 [WikiExchangeData.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiExchangeData.kt
 [WikiItemPrice.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiItemPrice.kt
 [ProductionDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/ProductionDetails.kt
-[NpcDetails.kt Link]: TODO()
-[MonsterDetails.kt Link]: TODO()
-[LocLineDetails.kt Link]: TODO()
-[Lua Link]: TODO()
+[NpcDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/NpcDetails.kt
+[MonsterDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/MonsterDetails.kt
+[LocLineDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/LocLineDetails.kt
+[Lua Link]: https://www.lua.org/pil/contents.html
 [Lua Image]: https://img.shields.io/badge/Lua-5.1-yellowgreen?logo=lua&style=flat
 [Kotlin Link]: https://kotlinlang.org/
 [Kotlin Image]: https://img.shields.io/badge/Kotlin-1.7.10-yellowgreen.svg?logo=kotlin&style=flat
@@ -792,8 +793,8 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
 [Gradle Image]: https://img.shields.io/badge/Gradle-7.3.4-yellowgreen.svg?logo=gradle&style=flat
 [Intellij Idea Link]: https://www.jetbrains.com/idea/
 [Intellij Idea Image]: https://img.shields.io/badge/Intellij-2022.1-yellowgreen.svg?logo=intellij-idea&style=flat
-[MediaWiki Link]: TODO()
-[MediaWiki Image]: TODO()
+[MediaWiki Link]: https://www.mediawiki.org/wiki/MediaWiki
+[MediaWiki Image]: [TODO()](https://www.mediawiki.org/static/images/icons/mediawikiwiki.svg)
 [DPL3 Documentation Link]: https://www.mediawiki.org/wiki/Extension:DynamicPageList_(DPL)
 [Kotlin DSL Link]: https://docs.gradle.org/current/userguide/kotlin_dsl.html
 [OsrsWiki Link]: https://oldschool.runescape.wiki/
