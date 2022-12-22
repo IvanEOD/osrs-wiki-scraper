@@ -54,11 +54,13 @@
 
 ## About the Project
 
-This project includes several useful examples of how to use the scraper to get customized data, but is primarily
+- This project includes several useful examples of how to use the scraper to get customized data, but is primarily
 intended to provide a framework for programmers to be able to create their own objects and methods to scrape the data
 they want.
 
-To be able to efficiently create methods to scrape the data you want you will need a basic understanding
+- The project was created to be used by programmers and provide a replacement for the no longer maintained OsrsBox project.
+
+- To be able to efficiently create methods to scrape the data you want you will need a basic understanding
 of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 ### Built With
