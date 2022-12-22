@@ -400,7 +400,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
     
 - The default code sent to the Wiki can be found here: [Scribunto.lua][Scribunto.lua Link]
 
-- The session uses the same `Session ID` for each request. The wiki will continue to add the code the requests to the session until the session is refreshed or the session expires.
+- The session uses the same `Session ID` for each request. The wiki will continue to add the code in the requests to the session until the session is refreshed or the session expires.
 
 
 - The session will automatically refresh if the session expires or if the session is refreshed manually.
