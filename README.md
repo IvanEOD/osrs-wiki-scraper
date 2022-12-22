@@ -60,7 +60,7 @@ they want.
 
 - The project was created to be used by programmers and provide a replacement for the no longer maintained OsrsBox project.
 
-- To be able to efficiently create methods to scrape the data you want you will need a basic understanding
+- To be able to efficiently create your own methods to scrape the data you want you will need a basic understanding
 of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 ### Built With
