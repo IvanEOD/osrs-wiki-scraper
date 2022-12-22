@@ -304,16 +304,31 @@ function getTemplatesWithDataOnPage(title, templates, printResults)
         include = formatTemplatesToIncludeString(templates)
     }
 
-    if (result ~= nil and result[1] ~= nil) then
-        local include = result[1]["include"]
-        if (include ~= nil) then
-            for _, template in ipairs(templates) do
-                local data = include[template]
-                if (data ~= nil) then
-                    if results[template] ~= nil then
-                        table.insert(results[template], data)
-                    else
-                        results[template] = { data }
+    if (result ~= nil) then
+        for index, value in ipairs(result) do
+            if (index == "DPL time" or index == "Parse time") then
+
+            else
+                local pageResults = {}
+                local valueTitle = value[index]["title"]
+                local include = value[index]["include"]
+                if (include ~= nil) then
+                    for _, template in ipairs(templates) do
+                        local data = include[template]
+                        if (data ~= nil) then
+                            if pageResults[template] ~= nil then
+                                table.insert(results[template], data)
+                            else
+                                pageResults[template] = { data }
+                            end
+                        end
+                    end
+                end
+                if results[valueTitle] == nil then
+                    results[valueTitle] = pageResults
+                else
+                    for template, data in pairs(pageResults) do
+                        table.insert(results[valueTitle][template], data)
                     end
                 end
             end
