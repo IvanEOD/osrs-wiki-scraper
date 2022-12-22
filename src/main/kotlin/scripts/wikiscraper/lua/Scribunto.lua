@@ -310,7 +310,11 @@ function getTemplatesWithDataOnPage(title, templates, printResults)
             for _, template in ipairs(templates) do
                 local data = include[template]
                 if (data ~= nil) then
-                    results[template] = data
+                    if results[template] ~= nil then
+                        table.insert(results[template], data)
+                    else
+                        results[template] = { data }
+                    end
                 end
             end
         end
