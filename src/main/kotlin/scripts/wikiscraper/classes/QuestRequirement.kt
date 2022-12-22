@@ -1,8 +1,6 @@
 package scripts.wikiscraper.classes
 
 /* Written by IvanEOD 12/9/2022, at 8:44 AM */
-
-
 sealed class QuestRequirement {
     data class Quest(val name: String): QuestRequirement()
     data class QuestPoint(val amount: Int): QuestRequirement()
