@@ -28,25 +28,24 @@
             <li><a href="#osrs-wiki">OsrsWiki Builder</a> </li>
             <li><a href="#osrs-wiki">Premade data parsing methods</a></li>
             <li><a href="#osrs-wiki">Standard data parsing methods</a></li>
-            <li><a href="#osrs-wiki-code">Code</a></li>
         </ul>
         </li>
         <li><a href="#scribunto-session-scribuntosessionkt">Scribunto Session</a>
         <ul>
-            <li><a href="#osrs-wiki">Usage</a></li>
-            <li><a href="#osrs-wiki-code">Code</a></li>
+            <li><a href="#-creating-a-scribunto-session">Creating a session</a></li>
+            <li><a href="#-using-a-scribunto-session">Using a session</a></li>
         </ul>
         </li>
         <li><a href="#lua-builder-luabuilderkt">Lua Builder</a>
         <ul>
-            <li><a href="#osrs-wiki">Usage</a></li>
-            <li><a href="#osrs-wiki-code">Code</a></li>
+            <li><a href="#the-lua-builder-is-a-dsl-for-easily-creating-lua-code-from-kotlin-it-is-not-intended-to-be-a-full-lua-interpreter-or-converter-but-rather-a-tool-to-make-it-easier-to-create-lua-code">LuaScope</a></li>
+            <li><a href="#kotlin-lua-table">Kotlin to Lua Conversion</a></li>
         </ul>
         </li>
         <li><a href="#utility-classes">Utility classes</a>
         <ul>
-            <li><a href="#osrs-wiki">Usage</a></li>
-            <li><a href="#osrs-wiki-code">Code</a></li>
+            <li><a href="#versioned-map-versionedmapkt">Versioned Map</a></li>
+            <li><a href="#titlequeue-titlequeuekt">Title Queue</a></li>
         </ul>
         </li>
         <li><a href="#useful-references">Useful References</a></li>
@@ -458,7 +457,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <table>
     
-    
+<a name="kotlin-lua-table"></a>    
 <tr>
   <th align="center">Kotlin</th>
   <th align="center">Lua Output</th> 
@@ -485,7 +484,7 @@ myValue = "value"
     
 <tr>
     
-<td style="justify-content: stretch"><pre lang="kt">"myValue".local() `=` "value"</pre>
+<td><pre lang="kt">"myValue".local() `=` "value"</pre>
 </td>
     
 <td>
