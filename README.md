@@ -686,9 +686,9 @@ val version2 = versionedMap.getVersion(2)   // Map<String, String>
 val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, String>>
 ```
 
-
-</details>
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+</details>
+
 
 - ### TitleQueue ([TitleQueue.kt][TitleQueue.kt Link])
 
