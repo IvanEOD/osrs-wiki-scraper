@@ -416,11 +416,13 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 
 <details><summary>
 
-###### The Lua Builder is a [DSL][Kotlin DSL Link] for easily creating [Lua][Lua Link] code from [Kotlin][Kotlin Link]. It is not intended to be a full Lua interpreter or converter, but rather a tool to make it easier to create Lua code.
+###### The Lua Builder is a [DSL][Kotlin DSL Link] for easily creating [Lua][Lua Link] code from [Kotlin][Kotlin Link]. 
 
 </summary>
 
 ---
+    
+_This is **not** intended to be a full Lua interpreter or converter, but rather a tool to make it easier to create Lua code._    
 
 - You can create a [LuaScope][LuaScope Link] instance with the `lua` function:
   - ```kotlin
