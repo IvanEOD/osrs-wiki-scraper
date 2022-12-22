@@ -453,71 +453,88 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
  
 
   - The [LuaTableScope][LuaTableScope.kt Link]
-   - This scope allows `String`, `Number`, `Boolean`, and `Date` keys.
-   - These values can not use `.local()` because they are values in a table.
+    - This scope allows `String`, `Number`, `Boolean`, and `Date` keys.
+    - These values can not use `.local()` because they are values in a table.
 
- <table>
+<table>
+    
+    
 <tr>
   <th align="center">Kotlin</th>
   <th align="center">Lua Output</th> 
 </tr> 
+    
+    
 <tr>
+    
 <td>
 
 ```kotlin
 "myValue" `=` "value"
 ```
 </td>
+    
 <td>
 
 ```lua
 myValue = "value"
 ```
 </td>
+    
 </tr>
+    
 <tr>
-<td>
-      
-```kotlin
-"myValue".local() `=` "value"
-```
+    
+<td style="white-space: nowrap"><pre lang="kt">"myValue".local() `=` "value"</pre>
 </td>
+    
 <td>
 
-  ```lua
-  local myValue = "value"
-  ```
+```lua
+local myValue = "value"
+```
 </td>
+    
 </tr>
+
 <tr>
+    
 <td>
 
 ```kotlin
 "myModule" `=` require("ModuleName")
 ```
 </td>
+    
 <td>
 
 ```lua
 myModule = require("ModuleName")
 ```
 </td>
+    
 </tr>
+    
 <tr>
+    
 <td>
 
 ```kotlin
 +"print('This code is just added as is to the Lua script')"
 ```
 </td>
+    
 <td>
 
 ```lua
 print('This code is just added as is to the Lua script')
 ```
 </td>
+    
 </tr>
+    
 <tr>
+    
 <td>
 
 ```kotlin
@@ -534,10 +551,9 @@ print('This code is just added as is to the Lua script')
 ```
 
 Inside the brackets is [LuaTableScope][LuaTableScope.kt Link] which allows values other than ``String`` to be keys.
-
 </td>
-<td style="align-content: baseline">
-
+    
+<td>
 
 ```lua
 myTable = { 
@@ -554,10 +570,10 @@ myTable = {
     }
 }
 ```
-
-
 </td>
+    
 </tr>
+    
 </table>
 
 ---
@@ -748,65 +764,36 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
 
 
 [OsrsWiki.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/OsrsWiki.kt
-
 [ScribuntoSession.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/ScribuntoSession.kt
-
 [LuaBuilder.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
 [LuaScope Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
 [LuaGlobalScope.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
 [LuaTableScope.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
-
 [VersionedMap.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/utility/VersionedMap.kt
 [TitleQueue.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/utility/TitleQueue.kt
-
 [DropDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/DropDetails.kt
-
 [EquipmentItemInfo.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/EquipmentItemInfo.kt
-
 [ItemBuyLimits.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/ItemBuyLimits.kt
-
 [ItemDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/ItemDetails.kt
-
 [LocationDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/LocationDetails.kt
-
 [QuestRequirement.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/QuestRequirement.kt
-
 [VarbitDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/VarbitDetails.kt
-
 [WikiExchangeData.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiExchangeData.kt
-
 [WikiItemPrice.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/WikiItemPrice.kt
-
 [ProductionDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/ProductionDetails.kt
-
 [NpcDetails.kt Link]: TODO()
-
 [MonsterDetails.kt Link]: TODO()
-
 [LocLineDetails.kt Link]: TODO()
-
 [Lua Link]: TODO()
-
 [Lua Image]: https://img.shields.io/badge/Lua-5.1-yellowgreen?logo=lua&style=flat
-
 [Kotlin Link]: https://kotlinlang.org/
-
 [Kotlin Image]: https://img.shields.io/badge/Kotlin-1.7.10-yellowgreen.svg?logo=kotlin&style=flat
-
 [Gradle Link]: https://gradle.org/
-
 [Gradle Image]: https://img.shields.io/badge/Gradle-7.3.4-yellowgreen.svg?logo=gradle&style=flat
-
 [Intellij Idea Link]: https://www.jetbrains.com/idea/
-
 [Intellij Idea Image]: https://img.shields.io/badge/Intellij-2022.1-yellowgreen.svg?logo=intellij-idea&style=flat
-
 [MediaWiki Link]: TODO()
-
 [MediaWiki Image]: TODO()
-
 [DPL3 Documentation Link]: https://www.mediawiki.org/wiki/Extension:DynamicPageList_(DPL)
-
 [Kotlin DSL Link]: https://docs.gradle.org/current/userguide/kotlin_dsl.html
-
 [OsrsWiki Link]: https://oldschool.runescape.wiki/
