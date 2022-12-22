@@ -1,9 +1,7 @@
-package scripts.wikiscraper.lua
+package scripts.wikiscraper.utility
 
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -17,7 +15,7 @@ class TitleQueue(titles: Collection<String>, val chunkSize: Int = 100) {
     private var activeJobs = 0
 
     fun print() {
-        print("$completedCount of $start completed. (jobs:$activeJobs) \r")
+        print("$completedCount of $start completed.\r")
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -34,9 +32,7 @@ class TitleQueue(titles: Collection<String>, val chunkSize: Int = 100) {
             else emptyIterations = 0
             send(chunk)
         }
-
     }
-
 
     @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
     fun execute(processor: suspend (List<String>) -> List<String>?) = runBlocking {
@@ -73,7 +69,7 @@ class TitleQueue(titles: Collection<String>, val chunkSize: Int = 100) {
         }.join()
     }
 
-    fun ConcurrentLinkedDeque<String>.pollChunk(quantity: Int): List<String> {
+    private fun ConcurrentLinkedDeque<String>.pollChunk(quantity: Int): List<String> {
         val chunk = mutableListOf<String>()
         for (i in 0 until quantity) {
             val title = pollFirst()

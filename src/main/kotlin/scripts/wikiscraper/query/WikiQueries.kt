@@ -10,7 +10,7 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import scripts.wikiscraper.OsrsWiki
 import scripts.wikiscraper.classes.*
-import scripts.wikiscraper.lua.TitleQueue
+import scripts.wikiscraper.utility.TitleQueue
 import scripts.wikiscraper.query.WikiQueryDefaults.isCommonIgnore
 import scripts.wikiscraper.query.WikiQueryDefaults.isNotCommonIgnore
 import scripts.wikiscraper.utility.*

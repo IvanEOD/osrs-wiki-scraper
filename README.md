@@ -582,13 +582,13 @@ myTable = {
 
 </summary>
  
-  - The easiest/best way to obtain this is by calling ``.toVersionedMap()`` on a `JsonObject` received from the wiki.
-    - ```kotlin
+  - The best way to obtain this is by calling ``.toVersionedMap()`` on a `JsonObject` received from the wiki.
+    ```kotlin
         val versionedMap = jsonObject.toVersionedMap()
       ```
   
 <div align="left">
-<div align="left" style="width: min-content; margin-left: 8%">
+<div align="left" style="width: min-content; margin-left: 4%">
 <div style="width: max-content">
 
 - The <code>VersionedMap</code> will create a <code>TemplatePropertyData</code> for each key:
@@ -636,9 +636,14 @@ TemplatePropertyData(name="id3", key="id", isWikiKey=true, version=3, value="333
 
 </div>
 </div>
+</div>
+</div>
+</div>
+</div>
+</div>
 
 * You can check how many versions a template has with ``versionedMap.versions``
-* By default getting a property without the version will return `Version 0`.</br>
+* By default, getting a property without the version will return `Version 0`.</br>
 * `Version 0` is all values combined, or in a single versioned property, the value itself.</br>
 * You can also use the original key if you know it and are expecting it.</br> 
 * ``id3`` will work the same as ``["id", 3]``
@@ -646,7 +651,6 @@ TemplatePropertyData(name="id3", key="id", isWikiKey=true, version=3, value="333
 * So if a version of a key is requested that does not exist, it will return the first or only value available.
 * You can get a full map of a specific version, or a list containing a map for each individual version.
 
-</div>
 
 ```kotlin
 val versionCount = versionedMap.versions    // 3
@@ -662,16 +666,39 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
 
 
 </details>
-
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 - ### TitleQueue ([TitleQueue.kt][TitleQueue.kt Link])
 
 <details><summary>
 
-###### This is used for efficiently scraping data by title in bulk.
+###### This is used for efficiently scraping data by titles in bulk.
 
 </summary>
 
+---
+
+ - If the response is too long the Wiki will return an error, if this happens you may need to lower the chunk size.
+
+
+ - Create a new queue with the list of titles and the chunk size. (The default size is 100)
+   - ```kotlin
+     val titles = wiki.getAll
+     val queue = TitleQueue(titles, 50)
+     ```
+
+ - Then call ``queue.execute { /* Your code here */ }`` to execute the queue.
+   - The block inside the execute function is suspending.
+   - The parameter passed to the block is a list of titles to be processed.
+   - The block should only return titles that failed to be processed and will be re-added to the queue.
+ 
+   - ```kotlin
+     val processedResults = mutableMapOf<String, String>()
+     queue.execute { titlesChunk ->
+       // Process the titles here adding any data to your results, and returning any failed titles.
+       // No data is returned from execute.
+     }
+     ```
 
 ---
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -706,6 +733,7 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
   * [DPL3 Manual - DPL Parameters: Criteria for page selection](https://followthescore.org/dpldemo/index.php?title=DPL:Manual_-_DPL_parameters:_Criteria_for_page_selection)
   * [Fandom DPL3 Extension - Parameters: Controlling output format](https://help.fandom.com/wiki/Extension:DPL3/Parameters:_Controlling_output_format)
 
+
 * Semantic Scribunto
   * [OSRS Wiki Semantic Search Playground](https://oldschool.runescape.wiki/w/Special:Ask?#search)
   * [Semantic Media Wiki GitHub](https://github.com/SemanticMediaWiki/SemanticScribunto/) 
@@ -716,6 +744,7 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
 
 
 </details>
+</details>
 
 
 [OsrsWiki.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/OsrsWiki.kt
@@ -723,12 +752,12 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
 [ScribuntoSession.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/ScribuntoSession.kt
 
 [LuaBuilder.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
-[LuaScope Link]: TODO()
-[LuaGlobalScope.kt Link]: TODO()
-[LuaTableScope.kt Link]: TODO()
+[LuaScope Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
+[LuaGlobalScope.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
+[LuaTableScope.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
 
-[VersionedMap.kt Link]: TODO()
-[TitleQueue.kt Link]: TODO()
+[VersionedMap.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/utility/VersionedMap.kt
+[TitleQueue.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/utility/TitleQueue.kt
 
 [DropDetails.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/classes/DropDetails.kt
 
