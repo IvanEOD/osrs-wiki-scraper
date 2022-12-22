@@ -25,7 +25,7 @@
         </li>
         <li><a href="#osrswiki-osrswikikt">OsrsWiki</a>
         <ul>
-            <li><a href="#osrswiki-builder">OsrsWiki Builder</a> </li>
+            <li><a href="#osrs-wiki-builder">OsrsWiki Builder</a> </li>
             <li><a href="#premade-data-parsing-methods">Premade data parsing methods</a></li>
             <li><a href="#standard-data-parsing-methods">Standard data parsing methods</a></li>
         </ul>
@@ -87,7 +87,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 </summary>
 
 ---
-
+    <a name="osrs-wiki-builder"></a>
 ```kotlin
    val wiki = OsrsWiki.builder()
     .withCookieManager(CookieManager())
@@ -130,7 +130,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 #### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Premade data parsing methods:
 
 </summary>
-
+<a name="premade-data-parsing-methods"></a>
 ---
 
 - Get page titles from Item IDs:
@@ -215,7 +215,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
 #### &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Standard data parsing methods:
 
 </summary>
-
+<a name="standard-data-parsing-methods"></a>
 ---
 
 - Get all titles in a category:
