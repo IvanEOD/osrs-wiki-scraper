@@ -391,6 +391,8 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
         "printReturn": "{\"json\": \"value\"}"        
     }
     ``` 
+    
+- The default code sent to the Wiki can be found here: [Scribunto.lua][Scribunto.lua Link]
 
 - The session uses the same `Session ID` for each request. The wiki will continue to add the code the requests to the session until the session is refreshed or the session expires.
 
@@ -769,6 +771,7 @@ val allVersions = versionedMap.getIndividualVersions()  // List<Map<String, Stri
 
 [OsrsWiki.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/OsrsWiki.kt
 [ScribuntoSession.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/ScribuntoSession.kt
+[Scribunto.lua Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/Scribunto.lua
 [LuaBuilder.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
 [LuaScope Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
 [LuaGlobalScope.kt Link]: https://github.com/IvanEOD/osrs-wiki-scraper/blob/master/src/main/kotlin/scripts/wikiscraper/lua/LuaBuilder.kt
