@@ -25,9 +25,9 @@
         </li>
         <li><a href="#osrswiki-osrswikikt">OsrsWiki</a>
         <ul>
-            <li><a href="#osrs-wiki">OsrsWiki Builder</a> </li>
-            <li><a href="#osrs-wiki">Premade data parsing methods</a></li>
-            <li><a href="#osrs-wiki">Standard data parsing methods</a></li>
+            <li><a href="#-osrswiki-builder">OsrsWiki Builder</a> </li>
+            <li><a href="#-premade-data-parsing-methods">Premade data parsing methods</a></li>
+            <li><a href="#-standard-data-parsing-methods">Standard data parsing methods</a></li>
         </ul>
         </li>
         <li><a href="#scribunto-session-scribuntosessionkt">Scribunto Session</a>
