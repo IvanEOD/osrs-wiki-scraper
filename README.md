@@ -467,6 +467,8 @@ _This is **not** intended to be a full Lua interpreter or converter, but rather 
     - This scope allows `String`, `Number`, `Boolean`, and `Date` keys.
     - These values can not use `.local()` because they are values in a table.
 
+    <sub>I don't know what is going on with the formatting in this table, I'm sorry, I tried! :upside_down_face: </sub>
+    
 <table>
     
 <a name="kotlin-lua-table"></a>    
