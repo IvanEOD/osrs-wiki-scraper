@@ -298,25 +298,13 @@ function getTemplatesOnPage(title, printResults)
 end
 
 function getTemplatesWithDataOnPage(title, templates, printResults)
-    local results = {}
     local result = dpl.ask {
         title = title,
         include = formatTemplatesToIncludeString(templates)
     }
-
-    if (result ~= nil and result[1] ~= nil) then
-        local include = result[1]["include"]
-        if (include ~= nil) then
-            for _, template in ipairs(templates) do
-                local data = include[template]
-                if (data ~= nil) then
-                    results[template] = data
-                end
-            end
-        end
-    end
+    
     if (printResults) then
-        printReturn(results)
+        printReturn(result)
     end
     return results
 end

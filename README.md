@@ -400,7 +400,7 @@ of [Lua][Lua Link], [Kotlin][Kotlin Link], and [MediaWiki][MediaWiki Link].
     
 - The default code sent to the Wiki can be found here: [Scribunto.lua][Scribunto.lua Link]
 
-- The session uses the same `Session ID` for each request. The wiki will continue to add the code the requests to the session until the session is refreshed or the session expires.
+- The session uses the same `Session ID` for each request. The wiki will continue to add the code in the requests to the session until the session is refreshed or the session expires.
 
 
 - The session will automatically refresh if the session expires or if the session is refreshed manually.
@@ -467,6 +467,8 @@ _This is **not** intended to be a full Lua interpreter or converter, but rather 
     - This scope allows `String`, `Number`, `Boolean`, and `Date` keys.
     - These values can not use `.local()` because they are values in a table.
 
+    <sub>I don't know what is going on with the formatting in this table, I'm sorry, I tried! :upside_down_face: </sub>
+    
 <table>
     
 <a name="kotlin-lua-table"></a>    
