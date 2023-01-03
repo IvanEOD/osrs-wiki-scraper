@@ -9,7 +9,7 @@ data class VarbitDetails(
     val content: String,
     val classType: ClassType,
     val description: String
-) {
+): Searchable {
 
     fun debug(prefix: String = "") {
         fun prefixPrint(message: String) { println("$prefix$message") }
@@ -34,6 +34,17 @@ data class VarbitDetails(
         Bitmap,
         Counter,
         Other
+    }
+
+    override val searchName: String = name
+    override val searchContent: String = content
+    override val searchDescription: String = description
+    override val searchTags: List<String> = buildList {
+        add(name)
+        add("Var")
+        add(index.toString())
+        add(type.name)
+        add(classType.name)
     }
 
     companion object {

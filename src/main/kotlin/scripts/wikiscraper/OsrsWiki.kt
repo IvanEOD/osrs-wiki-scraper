@@ -153,6 +153,8 @@ class OsrsWiki private constructor() {
             .apply { if (configuration.proxy != null) proxy(configuration.proxy) }
             .build()
 
+
+
         private fun startRequest(parameters: Map<String, String>): Request.Builder {
             val builder = configuration.baseUrl.newBuilder()
             parameters.forEach(builder::addQueryParameter)
